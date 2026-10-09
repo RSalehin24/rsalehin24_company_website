@@ -7,8 +7,14 @@ function attachmentExtension(name) {
   return name.slice(name.lastIndexOf('.')).toLowerCase();
 }
 
+export function attachmentDeliveryName(name) {
+  // Brevo's Unicode attachment headers can fail the receiving service's DKIM check.
+  if (/[^\x20-\x7e]/.test(name)) return 'attachment.zip';
+  return archivedExtensions.has(attachmentExtension(name)) ? `${name}.zip` : name;
+}
+
 export function attachmentRequiresArchive(name) {
-  return archivedExtensions.has(attachmentExtension(name));
+  return attachmentDeliveryName(name) !== name;
 }
 
 export function attachmentError(file) {

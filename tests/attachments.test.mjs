@@ -24,18 +24,33 @@ test('ZIP bytes match an independent Python zipfile fixture, preserving a Bengal
   assert.deepEqual(Buffer.from(createAttachmentArchive('বাংলা.md', content)), Buffer.from(fixture, 'base64'));
 });
 
-test('uses ZIP only for provider-unsupported formats and keeps original bytes in supported attachments', async () => {
+test('uses ZIP for provider-unsupported formats and Unicode names, preserving the original bytes', async () => {
   const content = Uint8Array.from([0, 255, 10, 13, 128, 129]);
-  for (const name of ['brief.pdf', 'brief.xlsx', 'image.JPG', 'image.tiff', 'notes.txt']) {
+  for (const name of ['brief.pdf', 'brief.xlsx', 'image.JPG', 'image.tiff', 'notes.txt', 'latest screentshot.png']) {
     assert.equal(attachmentRequiresArchive(name), false);
     const encoded = await encodeAttachment(new File([content], name));
     assert.equal(encoded.name, name);
     assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(content));
   }
-  for (const name of ['বাংলা.md', 'image.SVG', 'image.dcx', 'image.heic', 'brief.docs']) {
+  const archivedNames = [
+    ['বাংলা.md', 'attachment.zip'], ['বাংলা.png', 'attachment.zip'],
+    ['image.SVG', 'image.SVG.zip'], ['image.dcx', 'image.dcx.zip'],
+    ['image.heic', 'image.heic.zip'], ['brief.docs', 'brief.docs.zip'],
+  ];
+  for (const [name, deliveryName] of archivedNames) {
     assert.equal(attachmentRequiresArchive(name), true);
     const encoded = await encodeAttachment(new File([content], name));
-    assert.equal(encoded.name, name + '.zip');
+    assert.equal(encoded.name, deliveryName);
     assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(createAttachmentArchive(name, content)));
   }
+});
+
+test('delivers a macOS screenshot filename inside an ASCII-named ZIP matching an independent fixture', async () => {
+  const name = 'Screenshot 2026-10-09 at 10.41.57\u202fPM.png';
+  const content = Uint8Array.from([0, 255, 10, 13, 128, 129]);
+  // Python zipfile fixture uses the exact original Unicode filename and binary contents.
+  const fixture = 'UEsDBBQAAAgAAAAAIQDlPv+9BgAAAAYAAAAqAAAAU2NyZWVuc2hvdCAyMDI2LTEwLTA5IGF0IDEwLjQxLjU34oCvUE0ucG5nAP8KDYCBUEsBAhQAFAAACAAAAAAhAOU+/70GAAAABgAAACoAAAAAAAAAAAAgAAAAAAAAAFNjcmVlbnNob3QgMjAyNi0xMC0wOSBhdCAxMC40MS41N+KAr1BNLnBuZ1BLBQYAAAAAAQABAFgAAABOAAAAAAA=';
+  const encoded = await encodeAttachment(new File([content], name));
+  assert.equal(encoded.name, 'attachment.zip');
+  assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(fixture, 'base64'));
 });

@@ -51,7 +51,7 @@ function joinBytes(parts) {
   return result;
 }
 
-// A stored ZIP preserves files that Brevo cannot attach under their original extensions.
+// A stored ZIP preserves names and bytes when the original attachment cannot be delivered reliably.
 export function createAttachmentArchive(name, content) {
   const entry = { name: new TextEncoder().encode(name), content, checksum: checksumFor(content) };
   const local = localHeader(entry);

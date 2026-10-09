@@ -120,6 +120,19 @@ test('delivers Excel directly and packages Markdown, SVG and DCX with their orig
  }
 });
 
+test('packages a large PNG with a macOS Unicode filename without exposing that name in MIME headers', async () => {
+ const name = 'Screenshot 2026-10-09 at 10.41.57\u202fPM.png';
+ const content = new Uint8Array(1_139_016).fill(128);
+ const form = inquiryForm();
+ form.append('attachment',new File([content],name,{type:'image/png'}));
+ const mock = deliveryMock();
+ const response = await handleContact(requestFor(form),env,mock.fetchRequest);
+ assert.deepEqual(await response.json(),{ok:true,reference});
+ const attachment = JSON.parse(mock.calls[1].request.body).attachment[0];
+ assert.equal(attachment.name,'attachment.zip');
+ assert.deepEqual(Buffer.from(attachment.content,'base64'),Buffer.from(createAttachmentArchive(name,content)));
+});
+
 test('rejects missing, duplicate, invalid and oversized fields before contacting providers', async () => {
  const invalid = [{email:null},{email:'invalid'},{subject:' '},{subject:'x'.repeat(161)},{subject:'Subject\r\nBcc: victim@example.com'},{message:'x'.repeat(5001)},{service:'invalid'},{_gotcha:'spam'}];
  const forms = invalid.map(inquiryForm);
