@@ -27,7 +27,7 @@ Open `http://127.0.0.1:4321`. Primary content is rendered into HTML; JavaScript 
 
 - `src/data/site.ts` holds company details, both languages, page metadata, service descriptions, product stages and process content.
 - `src/layouts/PageLayout.astro` handles shared navigation, footer, canonical/hreflang, Open Graph text and structured data.
-- `src/components/SitePage.astro` selects a page component from `src/components/pages/`; `PageIntro.astro`, `ProcessSection.astro` and `Wordmark.astro` share repeated sections. The wordmark displays `RSalehiN24™` with uppercase N and a small raised trademark symbol; company metadata keeps the supplied `RSalehin24` name.
+- `src/components/SitePage.astro` selects a page component from `src/components/pages/`; `PageIntro.astro`, `ProcessSection.astro` and `Wordmark.astro` share repeated sections. The wordmark displays `RSalehin24™` with a small raised trademark symbol; company metadata keeps the supplied `RSalehin24` name.
 - `src/components/ContactForm.astro` renders a configured form or `DirectContact.astro`. `ContactMethods.astro` provides Gmail and email app links, a call action and selectable/copyable email address.
 - `src/scripts/contact.ts` manages submission state; `contact-challenge.ts` handles Turnstile and `src/lib/contact-validation.ts` handles validation. Shared file rules live in `src/lib/contact-rules.mjs`.
 - `worker/contact.mjs` accepts validated submissions and sends email with actual attachments through Brevo. `worker/wrangler.jsonc` configures its separate Cloudflare deployment.

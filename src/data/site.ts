@@ -266,7 +266,7 @@ export const content = {
       "phone": "Phone (optional)",
       "service": "Service interest",
       "servicePlaceholder": "Choose a service",
-      "otherService": "Something else / not sure yet",
+      "otherService": "Something else / Not sure yet",
       "subject": "Subject",
       "message": "Message",
       "messageHint": "What do you want to build or improve? Please avoid sharing passwords or sensitive financial information.",

@@ -63,7 +63,7 @@ Complete human verification and submission from both localized forms. Provider r
 
 Reviewed the project against `AGENTS.md`. Page selection is now separate from page content; six page components use a shared introduction where applicable, and Home/Services reuse the process section. Header/footer use one wordmark component. Form submission state is encapsulated in a controller, with field validation and email copying in separate modules. No dependencies were added.
 
-Header and footer wordmarks render `RSalehiN24™` without a dot, with uppercase N, lining numerals at the same font size as the main wordmark and a smaller superscript trademark symbol. The accessible name and company metadata remain `RSalehin24`. This is checked across the mobile, tablet and desktop viewports. Production build, static checks, configured and unconfigured contact states, all-route browser checks and accessibility scans were rerun after refactoring.
+Header and footer wordmarks render `RSalehin24™` without a dot, with the original lowercase n, lining numerals at the same font size as the main wordmark and a smaller superscript trademark symbol. The accessible name and company metadata remain `RSalehin24`. The English service-interest option reads `Something else / Not sure yet`; its capital N applies to the dropdown. These are checked across the mobile, tablet and desktop viewports. Production build, static checks, configured and unconfigured contact states, all-route browser checks and accessibility scans were rerun after refactoring.
 
 ## Live domain checks
 

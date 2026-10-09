@@ -78,7 +78,7 @@ async function verifyWordmark(page) {
  const marks=page.locator('.wordmark');
  assert.equal(await marks.count(),2);
  for(const mark of await marks.all()) {
-  assert.equal((await mark.innerText()).trim(),'RSalehiN24™');
+  assert.equal((await mark.innerText()).trim(),'RSalehin24™');
   await expect(mark).toHaveAttribute('aria-label','RSalehin24');
   const sizes=await mark.evaluate(element=>({brand:getComputedStyle(element).fontSize,number:getComputedStyle(element.querySelector('.brand-number')).fontSize,trademark:getComputedStyle(element.querySelector('.brand-trademark')).fontSize}));
   assert.equal(sizes.number,sizes.brand);
@@ -176,6 +176,7 @@ try{
   await page.goto(base+route+'?service=automation');
   const form=page.locator('form');const submit=form.locator('button[type="submit"]');const status=form.locator('[data-form-status]');
   await expect(form).toHaveAttribute('enctype','multipart/form-data');
+  if(language==='en')await expect(form.locator('option[value="other"]')).toHaveText('Something else / Not sure yet');
   if(provider==='brevo'){
    const initialLoads=challengeLoads;
    assert.equal(await page.locator('[name="cf-turnstile-response"]').count(),0);
@@ -276,7 +277,7 @@ try{
  await timedRequest.abort();await timeoutPage.close();
  results.push('Both languages and providers: subject/body/attachment multipart delivery, attachment type/empty/size validation, spam verification and expiry, blocked verification script, missing endpoint, preserved text and files after errors, provider/network/rate/invalid-response errors, 40-second timeout, duplicate prevention, success reset and honeypot passed; no real submission sent');
  assert.deepEqual(errors,[]);results.push('No browser JavaScript errors');
- results.push('Both languages: Gmail compose links and popup navigation (intercepted), mail-app and call actions, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have uppercase N, a small raised trademark, no dot and full-size numerals.');
+ results.push('Both languages: Gmail compose links and popup navigation (intercepted), mail-app and call actions, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have lowercase n, a small raised trademark, no dot and full-size numerals. The English service dropdown capitalizes Not sure yet.');
  await writeFile(join(artifacts,'browser-results.json'),JSON.stringify({date:new Date().toISOString(),checks,results},null,2));
  console.log(results.join('\n'));
 }finally{await browser.close();main.server.close();fixture.server.close();workerFixture.server.close();}
