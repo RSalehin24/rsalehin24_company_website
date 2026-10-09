@@ -168,6 +168,7 @@
  .form-field input[type="file"] { font-size:.85rem; overflow:hidden; }
  .form-field input[type="file"]::file-selector-button { background:var(--panel); color:var(--text); border:1px solid var(--line); padding:.45rem .7rem; margin-right:.75rem; cursor:pointer; }
  .challenge-field { margin-bottom:1.5rem; }
+ [data-turnstile] { min-height:140px; }
  .form-field .form-note { margin-bottom:.75rem; }
  .form-note { font-size:.83rem; color:var(--muted); }
  .form-note a { text-decoration:underline; }

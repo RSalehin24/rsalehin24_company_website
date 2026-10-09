@@ -15,6 +15,8 @@ Configured on 2026-10-09:
 
 A provider verification email with English/Bangla text and a real TXT attachment was accepted by Brevo, and its delivery log reports `delivered`. The owner confirmed mailbox receipt and correct attachment contents. Complete the real form checks below; this provider test alone does not verify the complete browser submission path.
 
+The approved live form tests stopped at the English human check: Turnstile rejected the automated browser and did not issue a token. Neither localized test was submitted. Complete both checks in a normal browser using the steps below.
+
 The Worker was uploaded through the Cloudflare API. GitHub Pages deployments update the website; redeploy the Worker separately after changes to `worker/` or `src/lib/contact-rules.mjs`, or connect Cloudflare Git builds as described below. Local credentials are kept in ignored `worker/.dev.vars.setup`; never commit or paste them into chat.
 
 ## 1. Prepare Brevo
@@ -31,7 +33,7 @@ In Cloudflare → Turnstile, create a **Managed** widget for `www.rsalehin24.me`
 
 [Turnstile widget setup](https://developers.cloudflare.com/turnstile/get-started/widget-management/dashboard/), [server verification](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
 
-The compact widget fits narrow mobile forms. Its own interface uses English because [Turnstile does not currently support Bengali](https://developers.cloudflare.com/turnstile/reference/supported-languages/); the form labels, validation and feedback remain fully localized.
+The compact widget fits narrow mobile forms. It loads when a visitor focuses the form or scrolls within 300 px of the check, and its space is reserved to avoid a layout jump. Browsers without IntersectionObserver load it immediately. Its own interface uses English because [Turnstile does not currently support Bengali](https://developers.cloudflare.com/turnstile/reference/supported-languages/); the form labels, validation and feedback remain fully localized.
 
 ## 3. Deploy the Worker
 

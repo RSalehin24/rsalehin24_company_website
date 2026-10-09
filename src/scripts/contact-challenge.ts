@@ -26,12 +26,28 @@ function loadTurnstile(): Promise<TurnstileAPI> {
 export class ContactChallenge {
   private widget: string | undefined;
   private api: TurnstileAPI | undefined;
+  private rendering: Promise<void> | undefined;
 
   constructor(private readonly form: HTMLFormElement, private readonly showError: () => void) {}
 
-  async initialize() {
+  initialize() {
     const container = this.form.querySelector<HTMLElement>('[data-turnstile]');
     if (!container) return;
+    if (!('IntersectionObserver' in window)) { void this.render(container); return; }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) start();
+    }, { rootMargin: '300px' });
+    const start = () => {
+      observer.disconnect();
+      this.form.removeEventListener('focusin', start);
+      this.rendering ??= this.render(container);
+    };
+    // Keep verification traffic out of the initial page load, ready before submission.
+    this.form.addEventListener('focusin', start, { once: true });
+    observer.observe(container);
+  }
+
+  private async render(container: HTMLElement) {
     try {
       this.api = await loadTurnstile();
       this.widget = this.api.render(container, {

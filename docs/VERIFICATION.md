@@ -38,7 +38,7 @@ Tested both languages using separate production fixtures for Cloudflare/Brevo an
 - Honeypot: filled spam field blocks outgoing requests.
 - Configured HTML form retains native validation and a Formspree action without JavaScript.
 - Cloudflare delivery verifies tokens before sending and refreshes them after attempts. Expired tokens, missing/failed verification and a blocked verification script are covered. Its no-JavaScript state disables sending and displays direct alternatives.
-- Both providers and languages passed mobile/tablet/desktop axe checks and layout checks, including 200% zoom. Compact Turnstile dimensions are represented by the browser mock. The actual provider widget still requires a live setup check; it uses English because Bengali is unsupported by Turnstile.
+- Both providers and languages passed mobile/tablet/desktop axe checks and layout checks, including 200% zoom. Compact Turnstile dimensions are represented by the browser mock and inspected on the live site; it uses English because Bengali is unsupported by Turnstile.
 - Direct panel contains separate Gmail and email app links with an encoded inquiry subject, plus a call link to +8801608537383. Gmail popup navigation and prefilled recipient/subject are tested using intercepted browser requests; no real Gmail draft or message is created.
 - English/Bangla copy-email success, denied clipboard permission and missing Clipboard API tested. Failure selects the address for manual copying and re-enables the action.
 - The email address remains selectable and Gmail, email app and phone links remain visible without JavaScript. Opening a visitor’s external email app depends on that visitor’s configured mail handler; the copy option supports webmail.
@@ -52,8 +52,11 @@ The Cloudflare Worker, Managed Turnstile widget, private Brevo/Turnstile secret 
 - Live Worker checks passed for www/apex CORS preflights, blocked foreign origins, required-field validation and missing spam tokens. A 5 MiB upload was parsed and rejected for missing verification without sending email; this checks upload parsing, not maximum-size email delivery.
 - A live browser check caught Turnstile rejecting `ready()` on an asynchronously loaded script. The loader now renders after the script's load event; the browser regression mock rejects `ready()` to cover the provider's behavior.
 - Browser audits use independent unconfigured/Formspree/Worker fixtures so local production variables cannot change the expected test states. All sends and test widgets remain intercepted in that audit.
+- After deployment, both production contact pages loaded the real Turnstile iframe, passed mobile WCAG scans with no horizontal overflow, and produced no page JavaScript errors. The visible human-verification checkbox was inspected.
+- The owner approved two complete form tests with TXT attachments. The English test stopped at human verification: Turnstile rejected the automated browser, so no token or form POST was produced. Neither the English nor Bangla test was sent. Complete both submissions in a normal browser.
+- Turnstile now loads on form focus or near the check. Regression checks confirm deferred loading, one script shared by focus/scroll triggers, token reset and the blocked-script error path. Reserved widget space prevents a layout jump.
 
-Recheck the real widget and complete submission from both localized forms after the loader fix is deployed. Provider receipt and mocked browser tests alone cannot prove the complete browser-to-Worker delivery path.
+Complete human verification and submission from both localized forms. Provider receipt and mocked browser tests alone cannot prove the complete browser-to-Worker delivery path.
 
 ## Refactoring and brand checks
 
@@ -67,7 +70,7 @@ GitHub Pages is configured to publish through GitHub Actions, with `www.rsalehin
 
 ## Mobile Lighthouse
 
-Earlier production-preview lab results using Lighthouse 13.5.0 and installed Chrome. All 12 content pages met the requested targets of performance >=90, accessibility >=95 and SEO >=95. These scores predate the attachment form; its configured states passed browser/axe checks, and Lighthouse should be rechecked after the live delivery service is enabled.
+Earlier production-preview lab results using Lighthouse 13.5.0 and installed Chrome. All 12 content pages met the requested targets of performance >=90, accessibility >=95 and SEO >=95. The following table predates the attachment form.
 
 | Route | Performance | Accessibility | SEO |
 | --- | ---: | ---: | ---: |
@@ -83,6 +86,8 @@ Earlier production-preview lab results using Lighthouse 13.5.0 and installed Chr
 | /bn/about/ | 96 | 100 | 100 |
 | /bn/contact/ | 98 | 100 | 100 |
 | /bn/privacy/ | 98 | 100 | 100 |
+
+The live attachment form initially scored 98/100/100 in English and 74–75/100/100 in Bangla. The Bangla report showed verification traffic during the initial paint. After deferring Turnstile until form interaction or proximity, the configured production preview scored 98/100/100 in English and 99/100/100 in Bangla. Recheck these two production URLs after deployment.
 
 Fonts and images are self-hosted. Responsive hero images were compressed and cropped at build time, and the primary English/Bengali font is preloaded. Full Lighthouse JSON/HTML reports are stored in .audit/. Deployed scores can vary with network and hosting conditions.
 

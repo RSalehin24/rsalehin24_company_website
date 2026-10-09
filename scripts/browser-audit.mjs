@@ -160,7 +160,8 @@ try{
  results.push('All primary content and navigation readable without JavaScript; configured form retains native validation');
  // Match the provider's ready() rejection for our asynchronously loaded script.
  const mockChallenge=`window.turnstile={ready:()=>{throw new Error('ready() cannot be used with async scripts');},render:(container,options)=>{window.auditChallengeOptions=options;const widget=document.createElement('div');widget.style.width=options.size==='compact'?'150px':'300px';widget.style.height=options.size==='compact'?'140px':'65px';container.append(widget);const field=document.createElement('input');field.type='hidden';field.name='cf-turnstile-response';field.value='audit-token';container.append(field);return 'audit-widget';},reset:()=>{document.body.dataset.challengeResets=String(Number(document.body.dataset.challengeResets||0)+1);document.querySelector('[name="cf-turnstile-response"]').value='audit-token';}};`;
- await page.route('https://challenges.cloudflare.com/**',route=>route.fulfill({status:200,contentType:'application/javascript',body:mockChallenge}));
+ let challengeLoads=0;
+ await page.route('https://challenges.cloudflare.com/**',route=>{challengeLoads++;return route.fulfill({status:200,contentType:'application/javascript',body:mockChallenge});});
  await page.setViewportSize({width:1440,height:1000});
  for(const language of ['en','bn']){
   const route=language==='en'?'/contact/':'/bn/contact/';await page.goto(main.url+route);
@@ -173,7 +174,14 @@ try{
   const form=page.locator('form');const submit=form.locator('button[type="submit"]');const status=form.locator('[data-form-status]');
   await expect(form).toHaveAttribute('enctype','multipart/form-data');
   if(provider==='brevo'){
+   const initialLoads=challengeLoads;
+   assert.equal(await page.locator('[name="cf-turnstile-response"]').count(),0);
+   await page.locator('#name').focus();
    await expect(page.locator('[name="cf-turnstile-response"]')).toHaveValue('audit-token');
+   assert.equal(challengeLoads,initialLoads+1);
+   await page.locator('[data-turnstile]').scrollIntoViewIfNeeded();
+   await page.locator('#email').focus();
+   assert.equal(challengeLoads,initialLoads+1,'focus and scrolling share one verification script');
    assert.equal(await page.evaluate(()=>window.auditChallengeOptions.size),'compact');
    assert.equal(await page.evaluate(()=>window.auditChallengeOptions.language),'en');
    const resets=await page.evaluate(()=>Number(document.body.dataset.challengeResets||0));
@@ -237,6 +245,7 @@ try{
  await page.route('https://challenges.cloudflare.com/**',route=>route.abort('internetdisconnected'));
  for(const route of ['/contact/','/bn/contact/']){
   await page.goto(workerFixture.url+route);const form=page.locator('form');
+  await form.locator('[data-turnstile]').scrollIntoViewIfNeeded();
   await expect(form.locator('[data-form-status]')).toHaveText(await form.getAttribute('data-challenge-error'));
   await expect(page.locator('.direct-details a[href="tel:+8801608537383"]')).toBeVisible();
   assert.equal(await page.locator('[name="cf-turnstile-response"]').count(),0);
