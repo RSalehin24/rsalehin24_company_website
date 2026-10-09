@@ -1,0 +1,14 @@
+---
+import ProductCard from '../ProductCard.astro';
+import Cta from '../Cta.astro';
+import { content, type Lang } from '../../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const localizedContent = content[lang];
+---
+<section class="wrap product-list">
+  <p class="stage-note">{localizedContent.products.stageNote}</p>
+  <div class="product-grid">{localizedContent.productItems.map((_,index) => <ProductCard lang={lang} index={index} detailed />)}</div>
+</section>
+<Cta lang={lang} title={localizedContent.products.ctaTitle} text={localizedContent.products.ctaText} />

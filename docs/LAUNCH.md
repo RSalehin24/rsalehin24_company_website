@@ -43,6 +43,10 @@ At your DNS provider, configure the following records. Preserve unrelated mail, 
 
 The `www` CNAME points to the account's GitHub Pages domain without the repository name. With both apex and www records set, and www chosen in Pages, GitHub redirects the apex to www. Do not point www to the apex. Check the official guide above for current DNS values and optional IPv6 records. These values were checked on 2026-10-09.
 
+Keep the Cloudflare web records **DNS only** while verifying GitHub Pages. Both domains need a valid certificate before an HTTPS redirect can succeed. If DNS has just changed, GitHub may provision a replacement certificate; keep the domain set to `www.rsalehin24.me` and enable Enforce HTTPS when issuance finishes. GitHub documents that HTTPS availability and DNS propagation can take up to 24 hours.
+
+A Firefox “Server Not Found” message can persist while a network or browser caches an earlier empty DNS response. Compare the default resolver with public resolvers (`dig rsalehin24.me A`, `dig @1.1.1.1 rsalehin24.me A`, `dig @8.8.8.8 rsalehin24.me A`). If public DNS returns all four GitHub IPs while the default returns no answers, allow the cached response to expire or use Firefox DNS over HTTPS with a public provider. Do not replace the correct DNS records to work around a cached result. See [Firefox DNS over HTTPS settings](https://support.mozilla.org/en-US/kb/dns-over-https).
+
 Verify `https://www.rsalehin24.me/` and `https://rsalehin24.me/`, the apex redirect, HTTPS certificate and every English/Bangla route. Check a nonexistent path returns a 404 status and a helpful page. GitHub Pages serves the global English 404; it links to a full Bangla 404 page.
 
 ## Search visibility

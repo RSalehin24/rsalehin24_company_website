@@ -34,8 +34,21 @@ Tested both languages using a separately built fixture and intercepted Formspree
 - Confirmed success: localized feedback and reset form.
 - Honeypot: filled spam field blocks outgoing requests.
 - Configured HTML form retains native validation and a Formspree action without JavaScript.
+- Direct panel contains both an email app link with an encoded inquiry subject and a call link to +8801608537383.
+- English/Bangla copy-email success, denied clipboard permission and missing Clipboard API tested. Failure selects the address for manual copying and re-enables the action.
+- The email address remains selectable and both contact links remain visible without JavaScript. Opening a visitor’s external email app depends on that visitor’s configured mail handler; the copy option supports webmail.
 
 Actual Formspree endpoint creation, destination email verification and confirmed inbox receipt remain launch requirements. These cannot be established by mocked browser tests.
+
+## Refactoring and brand checks
+
+Reviewed the project against `AGENTS.md`. Page selection is now separate from page content; six page components use a shared introduction where applicable, and Home/Services reuse the process section. Header/footer use one wordmark component. Form submission state is encapsulated in a controller, with field validation and email copying in separate modules. No dependencies were added.
+
+Header and footer wordmarks render `RSalehin24` without a dot, with lining numerals at the same font size as the main wordmark. This is checked across the mobile, tablet and desktop viewports. Production build, static checks, configured and unconfigured contact states, all-route browser checks and accessibility scans were rerun after refactoring.
+
+## Live domain checks
+
+GitHub Pages is configured to publish through GitHub Actions, with `www.rsalehin24.me` as the custom domain and HTTPS enforcement enabled. GitHub approved a certificate covering both `www.rsalehin24.me` and `rsalehin24.me`. HTTPS requests to the root return 301 to www, preserving localized paths; the final page returns 200. Verified with normal TLS validation and public DNS over HTTPS, along with DNS queries to Cloudflare, Google and the network resolver. A previously cached empty DNS result can still affect a local browser independently of the working public configuration.
 
 ## Mobile Lighthouse
 
@@ -43,23 +56,23 @@ Local production-preview lab results using Lighthouse 13.5.0 and installed Chrom
 
 | Route | Performance | Accessibility | SEO |
 | --- | ---: | ---: | ---: |
-| / | 96 | 100 | 100 |
+| / | 97 | 100 | 100 |
 | /bn/ | 96 | 100 | 100 |
 | /services/ | 99 | 100 | 100 |
 | /products/ | 99 | 100 | 100 |
-| /about/ | 96 | 100 | 100 |
+| /about/ | 98 | 100 | 100 |
 | /contact/ | 99 | 100 | 100 |
 | /privacy/ | 99 | 100 | 100 |
 | /bn/services/ | 99 | 100 | 100 |
-| /bn/products/ | 98 | 100 | 100 |
+| /bn/products/ | 99 | 100 | 100 |
 | /bn/about/ | 96 | 100 | 100 |
 | /bn/contact/ | 98 | 100 | 100 |
-| /bn/privacy/ | 99 | 100 | 100 |
+| /bn/privacy/ | 98 | 100 | 100 |
 
 Fonts and images are self-hosted. Responsive hero images were compressed and cropped at build time, and the primary English/Bengali font is preloaded. Full Lighthouse JSON/HTML reports are stored in .audit/. Deployed scores can vary with network and hosting conditions.
 
 ## Remaining launch work
 
-Follow [LAUNCH.md](LAUNCH.md) to configure and verify Formspree, enable GitHub Pages, attach www.rsalehin24.me, set DNS, enable HTTPS, confirm live routes and submit the sitemap to Search Console.
+Follow [LAUNCH.md](LAUNCH.md) to configure and verify Formspree and submit the sitemap to Search Console. Pages publishing, the custom domain, DNS and HTTPS have been configured; recheck them after future hosting or DNS changes.
 
 EPUB Reader returned external HTTP 200 on 2026-10-09. Recheck reachability immediately before launch. eLibrary has no live button; Personal Financial Management is explicitly planned and at inception.

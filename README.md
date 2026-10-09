@@ -21,14 +21,15 @@ npm run verify
 npm run preview -- --host 127.0.0.1 --port 4321
 ```
 
-Open `http://127.0.0.1:4321`. Primary content is rendered into HTML; JavaScript only enhances the menu and configured contact form.
+Open `http://127.0.0.1:4321`. Primary content is rendered into HTML; JavaScript enhances the menu, email copying and configured contact form.
 
 ## Content and assets
 
 - `src/data/site.ts` holds company details, both languages, page metadata, service descriptions, product stages and process content.
 - `src/layouts/PageLayout.astro` handles shared navigation, footer, canonical/hreflang, Open Graph text and structured data.
-- `src/components/SitePage.astro` renders the six page types.
-- `src/components/ContactForm.astro` renders a working configured form or direct contact alternatives.
+- `src/components/SitePage.astro` selects a page component from `src/components/pages/`; `PageIntro.astro`, `ProcessSection.astro` and `Wordmark.astro` share repeated sections.
+- `src/components/ContactForm.astro` renders a configured form or `DirectContact.astro`. `ContactMethods.astro` provides the email app link, call action and selectable/copyable email address.
+- `src/scripts/contact.ts` manages submission state; `src/lib/contact-validation.ts` handles field validation and errors.
 - `src/styles/global.css` contains the dark forest design and responsive rules.
 - `src/assets/forest-lake.jpg` is the licensed source photo; Astro creates local responsive WebP and JPEG output.
 - Company details were taken from the supplied `info.md` reference and are centralized in `src/data/site.ts`.
@@ -39,7 +40,7 @@ EPUB Reader is linked only to `company.readerUrl`, verified against its domain f
 
 ## Contact delivery
 
-Leave `PUBLIC_FORMSPREE_ENDPOINT` empty until the owner creates a Formspree form and confirms delivery to `mail@rsalehin24.me`. The default production site provides clickable email and phone with no unavailable submit button.
+Leave `PUBLIC_FORMSPREE_ENDPOINT` empty until the owner creates a Formspree form and confirms delivery to `mail@rsalehin24.me`. The default production site provides email and phone actions together. Email links open the visitor’s configured email app; visitors using webmail can copy the address instead. When clipboard access fails, the address is selected for manual copying. Without JavaScript, the email address remains selectable and both contact links remain usable.
 
 Copy `.env.example` to `.env` for local configuration. This is a public form URL, not an API key. Only `https://formspree.io/f/FORM_ID` is accepted; invalid values fail the build. Rebuild after changing the value. See [launch instructions](docs/LAUNCH.md) for GitHub configuration and actual email verification.
 
@@ -47,7 +48,7 @@ Native HTML validation works without JavaScript. Enhanced submission adds locali
 
 ## Browser verification
 
-`npm run audit` uses installed Chrome by default. It builds a separate ignored fixture with a dummy Formspree URL and intercepts every request to that URL; it never sends an actual inquiry. It checks all routes at 360, 768 and 1440px, automated WCAG scans, keyboard/menu behavior, reduced motion, zoom, no-JavaScript readability and both-language contact states.
+`npm run audit` uses installed Chrome by default. It builds a separate ignored fixture with a dummy Formspree URL and intercepts every request to that URL; it never sends an actual inquiry. It checks all routes at 360, 768 and 1440px, automated WCAG scans, keyboard/menu behavior, reduced motion, zoom, no-JavaScript readability, both-language contact states, clipboard success/failure/unavailability, and the shared wordmark.
 
 ```sh
 npm run audit

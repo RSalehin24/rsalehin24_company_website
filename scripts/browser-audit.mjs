@@ -25,6 +25,47 @@ async function serve(root){
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  return {server,url:'http://127.0.0.1:'+server.address().port};
 }
+async function verifyDirectContact(page, language) {
+ const panel=page.locator('[data-direct-contact]');
+ await expect(panel.locator('a[href="tel:+8801608537383"]')).toBeVisible();
+ const emailLink=panel.locator('a[href^="mailto:"]');
+ await expect(emailLink).toBeVisible();
+ const emailURL=new URL(await emailLink.getAttribute('href'));
+ assert.equal(emailURL.pathname,'mail@rsalehin24.me');
+ assert.ok(emailURL.searchParams.get('subject').includes('RSalehin24'));
+ const address=panel.locator('[data-email-address]');
+ await expect(address).toHaveValue('mail@rsalehin24.me');
+ await expect(address).toHaveAttribute('readonly','');
+ const copy=panel.locator('[data-copy-email]');
+ await expect(copy).toBeVisible();
+ await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{document.body.dataset.copiedEmail=value;}}}));
+ await copy.click();
+ assert.equal(await page.evaluate(()=>document.body.dataset.copiedEmail),'mail@rsalehin24.me');
+ await expect(panel.locator('[data-copy-feedback]')).toHaveText(await copy.getAttribute('data-copied'));
+ await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('Clipboard denied');}}}));
+ await copy.click();
+ await expect(panel.locator('[data-copy-feedback]')).toHaveText(await copy.getAttribute('data-copy-error'));
+ await expect(address).toBeFocused();
+ assert.equal(await address.evaluate(input=>input.selectionEnd-input.selectionStart), 'mail@rsalehin24.me'.length);
+ await expect(copy).toBeEnabled();
+ await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined}));
+ await copy.click();
+ await expect(panel.locator('[data-copy-feedback]')).toHaveText(await copy.getAttribute('data-copy-error'));
+ for(const width of [360,1440]) {
+  await page.setViewportSize({width,height:1000});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'contact actions overflow '+language+' '+width);
+  await panel.screenshot({path:join(artifacts,'contact-'+language+'-'+width+'.png')});
+ }
+}
+async function verifyWordmark(page) {
+ const marks=page.locator('.wordmark');
+ assert.equal(await marks.count(),2);
+ for(const mark of await marks.all()) {
+  assert.equal((await mark.innerText()).trim(),'RSalehin24');
+  const sizes=await mark.evaluate(element=>({brand:getComputedStyle(element).fontSize,number:getComputedStyle(element.querySelector('.brand-number')).fontSize}));
+  assert.equal(sizes.number,sizes.brand);
+ }
+}
 const configured=join(artifacts,'form-site');
 execFileSync(process.execPath,['node_modules/astro/bin/astro.mjs','build','--outDir',configured],{env:{...process.env,PUBLIC_FORMSPREE_ENDPOINT:'https://formspree.io/f/audit1234',ASTRO_TELEMETRY_DISABLED:'1'},stdio:'pipe'});
 const main=await serve(resolve('dist')), fixture=await serve(configured);
@@ -39,7 +80,12 @@ try{
    const response=await page.goto(main.url+route);assert.equal(response.status(),200);
    await page.evaluate(()=>document.fonts.ready);
    await expect(page.locator('h1')).toBeVisible();
+   if(route==='/')await verifyWordmark(page);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'overflow '+width+' '+route);
+   for(const image of await page.locator('img').all()) {
+    await image.scrollIntoViewIfNeeded();
+    await expect.poll(()=>image.evaluate(element=>element.complete&&element.naturalWidth>0),{message:'image loading '+route}).toBe(true);
+   }
    assert.equal(await page.evaluate(()=>[...document.images].every(i=>i.complete&&i.naturalWidth>0)),true,'images '+route);
    if(!process.env.AUDIT_SKIP_AXE) { const a11y=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();
    assert.deepEqual(a11y.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[],'accessibility '+width+' '+route); }
@@ -70,12 +116,20 @@ try{
  const nojs=await browser.newContext({javaScriptEnabled:false,viewport:{width:360,height:800}});
  const plain=await nojs.newPage();
  for(const route of routes){await plain.goto(main.url+route);await expect(plain.locator('h1')).toBeVisible();await expect(plain.locator('#primary-navigation')).toBeVisible();assert.equal(await plain.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);checks++;}
+ for(const route of ['/contact/','/bn/contact/']) {
+  await plain.goto(main.url+route);
+  const panel=plain.locator('[data-direct-contact]');
+  await expect(panel.locator('a[href="tel:+8801608537383"]')).toBeVisible();
+  await expect(panel.locator('[data-email-address]')).toHaveValue('mail@rsalehin24.me');
+  await expect(panel.locator('[data-copy-email]')).toBeHidden();
+ }
  await plain.goto(fixture.url+'/contact/');await expect(plain.locator('form')).toHaveAttribute('action','https://formspree.io/f/audit1234');assert.equal(await plain.locator('form').evaluate(e=>e.noValidate),false);await nojs.close();
  results.push('All primary content and navigation readable without JavaScript; configured form retains native validation');
  await page.setViewportSize({width:1440,height:1000});
  for(const language of ['en','bn']){
   const route=language==='en'?'/contact/':'/bn/contact/';await page.goto(main.url+route);
   await expect(page.locator('[data-direct-contact]')).toBeVisible();assert.equal(await page.locator('form').count(),0);
+  await verifyDirectContact(page, language);
   await page.goto(fixture.url+route+'?service=automation');
   const form=page.locator('form');const submit=form.locator('button[type="submit"]');const status=form.locator('[data-form-status]');
   await expect(page.locator('#service')).toHaveValue('automation');
@@ -108,6 +162,7 @@ try{
  }
  results.push('Both languages: missing endpoint, validation, service selection, preserved error text, provider/network/rate/invalid-response errors, progress, duplicate prevention, success and honeypot passed; no real submission sent');
  assert.deepEqual(errors,[]);results.push('No browser JavaScript errors');
+ results.push('Both languages: call and email actions in the fallback panel, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have no dot and full-size numerals.');
  await writeFile(join(artifacts,'browser-results.json'),JSON.stringify({date:new Date().toISOString(),checks,results},null,2));
  console.log(results.join('\n'));
 }finally{await browser.close();main.server.close();fixture.server.close();}

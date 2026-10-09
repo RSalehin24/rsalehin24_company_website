@@ -1,0 +1,26 @@
+---
+import ProcessSection from '../ProcessSection.astro';
+import Cta from '../Cta.astro';
+import { content, pagePath, type Lang } from '../../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const localizedContent = content[lang];
+---
+<div class="service-details wrap">{localizedContent.serviceItems.map((item,index) => <section class="service-detail" id={item.id}>
+    <div class="service-detail-main">
+      <span class="section-number" aria-hidden="true">0{index+1} /</span>
+      <h2>{item.title}</h2>
+      <p>{item.description}</p>
+      <a class="text-link" href={pagePath(lang,'contact')+'?service='+item.id}>{localizedContent.ui.inquiry}<span class="sr-only"> — {item.title}</span>
+      </a>
+    </div>
+    <div class="service-detail-benefits">
+      <h3>{localizedContent.services.benefitLabel}</h3>
+      <ul class="feature-list">{item.benefits.map(benefit => <li>{benefit}</li>)}</ul>
+      <h3>{localizedContent.services.fitLabel}</h3>
+      <p>{item.fit}</p>
+    </div>
+  </section>)}</div>
+<ProcessSection lang={lang} />
+<Cta lang={lang} title={localizedContent.services.ctaTitle} text={localizedContent.services.ctaText} />

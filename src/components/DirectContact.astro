@@ -1,0 +1,15 @@
+---
+import ContactMethods from './ContactMethods.astro';
+import { content, pagePath, type Lang } from '../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const labels = content[lang].contact;
+---
+<div class="contact-form-panel direct-panel" data-direct-contact>
+  <span class="section-number" aria-hidden="true">01 /</span>
+  <h2>{labels.unconfiguredTitle}</h2>
+  <p>{labels.unconfiguredText}</p>
+  <ContactMethods lang={lang} />
+  <p class="form-note"><a href={pagePath(lang, 'privacy')}>{labels.privacyLink}</a></p>
+</div>

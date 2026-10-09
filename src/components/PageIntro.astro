@@ -1,0 +1,20 @@
+---
+import { content, type Lang, type PageKey } from '../data/site';
+
+interface Props { lang: Lang; page: Exclude<PageKey, 'home'>; }
+const { lang, page } = Astro.props;
+const localizedContent = content[lang];
+const section = localizedContent[page];
+const labels = {
+  services: localizedContent.ui.serviceLabel,
+  products: localizedContent.ui.productLabel,
+  about: localizedContent.ui.aboutLabel,
+  contact: localizedContent.ui.contactLabel,
+  privacy: localizedContent.ui.privacyLabel,
+};
+---
+<section class="page-intro wrap">
+  <p class="eyebrow">{labels[page]}</p>
+  <h1>{section.title}<br /><em>{section.accent}</em></h1>
+  <p>{section.intro}</p>
+</section>

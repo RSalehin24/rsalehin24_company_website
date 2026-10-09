@@ -1,0 +1,65 @@
+---
+import ForestImage from '../ForestImage.astro';
+import ProductCard from '../ProductCard.astro';
+import ProcessSection from '../ProcessSection.astro';
+import Cta from '../Cta.astro';
+import { content, pagePath, type Lang } from '../../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const localizedContent = content[lang];
+---
+<section class="hero wrap">
+  <div class="hero-landscape">
+    <ForestImage alt={localizedContent.ui.photoAlt} eager />
+  </div>
+  <div class="hero-content">
+    <p class="eyebrow">{localizedContent.home.eyebrow}</p>
+    <h1>{localizedContent.home.title}<br />
+      <em>{localizedContent.home.accent}</em>
+    </h1>
+    <p class="hero-intro">{localizedContent.home.intro}</p>
+    <div class="hero-actions">
+      <a class="button" href={pagePath(lang,'contact')}>{localizedContent.ui.discuss}</a>
+      <a class="text-link" href={pagePath(lang,'services')}>{localizedContent.home.secondary}</a>
+    </div>
+    <p class="hero-note">{localizedContent.home.note}</p>
+  </div>
+  <div class="hero-caption" aria-hidden="true">
+    <span class="caption-line"></span>
+    <span>{localizedContent.home.imageNote}</span>
+  </div>
+</section>
+<section class="service-overview section wrap">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">{localizedContent.ui.serviceLabel}</p>
+      <h2>{localizedContent.home.servicesTitle}<br />
+        <em>{localizedContent.home.servicesAccent}</em>
+      </h2>
+    </div>
+    <p>{localizedContent.home.servicesIntro}</p>
+  </div>
+  <div class="service-grid">{localizedContent.serviceItems.map((item,index) => <article class="service-summary">
+      <span class="section-number" aria-hidden="true">0{index+1} /</span>
+      <h3>{item.title}</h3>
+      <p>{item.short}</p>
+      <a class="text-link" href={pagePath(lang,'services')+'#'+item.id}>{localizedContent.ui.learn}<span class="sr-only"> — {item.title}</span>
+      </a>
+    </article>)}</div>
+</section>
+<section class="products-section section">
+  <div class="wrap">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">{localizedContent.ui.productLabel}</p>
+        <h2>{localizedContent.home.productsTitle}</h2>
+      </div>
+      <p>{localizedContent.home.productsIntro}</p>
+    </div>
+    <div class="product-grid">{localizedContent.productItems.map((_,index) => <ProductCard lang={lang} index={index} />)}</div>
+    <a class="text-link section-link" href={pagePath(lang,'products')}>{localizedContent.ui.productsLink}</a>
+  </div>
+</section>
+<ProcessSection lang={lang} />
+<Cta lang={lang} title={localizedContent.about.ctaTitle} text={localizedContent.about.ctaText} />

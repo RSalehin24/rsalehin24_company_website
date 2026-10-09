@@ -39,8 +39,7 @@
  .header-inner { display:flex; align-items:center; gap:2rem; min-height:104px; flex-wrap:wrap; }
  .wordmark { flex-shrink:0; font-family:var(--serif); font-size:1.8rem; line-height:1.2; letter-spacing:-.08em; font-weight:550; }
  .brand-middle { font-weight:350; }
- .brand-number { font-family:var(--font); font-size:.68em; letter-spacing:-.08em; margin-left:.09em; }
- .brand-dot { color:var(--green); }
+ .brand-number { font-size:1em; font-variant-numeric:lining-nums; letter-spacing:-.08em; margin-left:.09em; }
  .primary-nav { display:flex; gap:2rem; margin-left:auto; }
  .primary-nav a { font-size:.9rem; padding:.75rem 0; position:relative; color:var(--muted); }
  .primary-nav a:hover,.primary-nav a[aria-current="page"] { color:var(--text); }
@@ -152,7 +151,15 @@
  .contact-form-panel h2 { font-size:2.4rem; margin-bottom:1.5rem; }
  .contact-form-panel>p { color:var(--muted); margin-bottom:1.5rem; }
  .direct-panel .section-number { margin-bottom:3rem; }
- .direct-panel .button { margin-block:1rem 1.5rem; }
+ .contact-actions { display:flex; flex-wrap:wrap; align-items:stretch; gap:1rem; margin-block:1rem 1.5rem; }
+ .button-secondary { background:transparent; color:var(--green); border-color:var(--line); }
+ .button-secondary:hover { background:var(--panel-2); border-color:var(--green); color:var(--green); }
+ .call-action { flex-direction:column; gap:.15rem; }
+ .contact-methods>.form-note { margin-bottom:1rem; }
+ .copy-email-row { display:flex; flex-wrap:wrap; gap:.75rem; margin-bottom:1rem; }
+ .copy-email-row input { flex:1 1 12rem; width:100%; background:var(--bg); border:1px solid #637566; border-radius:2px; padding:.7rem .85rem; color:var(--text); }
+ .copy-email-row button { flex:0 1 auto; }
+ .copy-feedback:not(:empty) { margin-bottom:1.5rem; }
  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
  .form-field { margin-bottom:1.3rem; }
  .form-field label { display:block; font-size:.9rem; margin-bottom:.5rem; }

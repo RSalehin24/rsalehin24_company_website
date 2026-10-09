@@ -1,0 +1,34 @@
+---
+import ContactForm from '../ContactForm.astro';
+import { company, content, type Lang } from '../../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const localizedContent = content[lang];
+---
+<section class="contact-layout wrap">
+  <div class="direct-details">
+    <h2>{localizedContent.contact.directTitle}</h2>
+    <dl>
+      <div>
+        <dt>{localizedContent.contact.emailLabel}</dt>
+        <dd>
+          <a href={'mailto:'+company.email}>{company.email}</a>
+        </dd>
+      </div>
+      <div>
+        <dt>{localizedContent.contact.phoneLabel}</dt>
+        <dd>
+          <a href={'tel:'+company.phone}>{company.phone}</a>
+        </dd>
+      </div>
+      <div>
+        <dt>{localizedContent.contact.addressLabel}</dt>
+        <dd>
+          <address>{company.address[lang]}</address>
+        </dd>
+      </div>
+    </dl>
+  </div>
+  <ContactForm lang={lang} />
+</section>

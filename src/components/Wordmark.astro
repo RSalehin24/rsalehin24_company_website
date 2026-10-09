@@ -1,0 +1,9 @@
+---
+import { pagePath, type Lang } from '../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+---
+<a class="wordmark" href={pagePath(lang, 'home')} aria-label="RSalehin24">
+  <span lang="en">R<span class="brand-middle">Salehin</span><span class="brand-number">24</span></span>
+</a>

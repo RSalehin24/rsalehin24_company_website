@@ -17,6 +17,7 @@ for (const route of routes) {
  const html=await readFile(fileFor(route),'utf8');
  assert.match(html,new RegExp('<html lang="'+(route.startsWith('/bn/')?'bn':'en')+'"'));
  assert.equal((html.match(/<h1\b/g)||[]).length,1,'one H1 at '+route);
+ assert.ok(!html.includes('brand-dot'),'wordmark dot at '+route);
  const title=html.match(/<title>(.*?)<\/title>/s)?.[1]; assert.ok(title); assert.ok(!titles.has(title)); titles.add(title);
  const metas=tags(html,'meta');const description=metas.find(m=>m.name==='description')?.content;
  assert.ok(description?.length>40);assert.ok(!descriptions.has(description));descriptions.add(description);
@@ -35,7 +36,7 @@ for (const route of routes) {
   assert.ok(html.includes('mailto:mail@rsalehin24.me'));assert.ok(html.includes('tel:+8801608537383'));
   const forms=tags(html,'form');
   if(forms.length){assert.equal(forms.length,1);assert.match(forms[0].action,/^https:\/\/formspree\.io\/f\/[a-zA-Z0-9]+$/);assert.equal(forms[0].method,'POST');assert.ok(!html.includes('data-direct-contact'));}
-  else {assert.ok(html.includes('data-direct-contact'));assert.ok(!html.includes('<form '));}
+  else {assert.ok(html.includes('data-direct-contact'));assert.ok(!html.includes('<form '));assert.ok(html.includes('data-copy-email'));assert.ok(html.includes('data-email-address'));}
  }
 }
 for(const file of files.filter(f=>f.endsWith('.html'))) {

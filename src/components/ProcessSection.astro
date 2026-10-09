@@ -1,0 +1,20 @@
+---
+import { content, type Lang } from '../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const localizedContent = content[lang];
+---
+<section class="process-section section wrap">
+  <p class="eyebrow">{localizedContent.ui.processLabel}</p>
+  <h2>{localizedContent.home.processTitle}<br /><em>{localizedContent.home.processAccent}</em></h2>
+  <ol class="process-grid">
+    {localizedContent.process.map((item, index) => (
+      <li>
+        <span class="section-number" aria-hidden="true">0{index + 1}</span>
+        <h3>{item.title}</h3>
+        <p>{item.text}</p>
+      </li>
+    ))}
+  </ol>
+</section>

@@ -1,0 +1,27 @@
+---
+import { company, content, type Lang } from '../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const labels = content[lang].contact;
+const emailLink = `mailto:${company.email}?subject=${encodeURIComponent(labels.emailSubject)}`;
+---
+<div class="contact-methods" data-contact-methods>
+  <div class="contact-actions">
+    <a class="button" href={emailLink}>{labels.emailCta}</a>
+    <a class="button button-secondary call-action" href={`tel:${company.phone}`}>
+      <span>{labels.phoneCta}</span><span lang="en">{company.phone}</span>
+    </a>
+  </div>
+  <p class="form-note">{labels.emailHelp}</p>
+  <div class="copy-email-row">
+    <label class="sr-only" for={`direct-email-${lang}`}>{labels.emailLabel}</label>
+    <input id={`direct-email-${lang}`} type="text" value={company.email} readonly data-email-address />
+    <button class="button button-secondary" type="button" hidden data-copy-email
+      data-copied={labels.emailCopied} data-copy-error={labels.copyEmailError}>
+      {labels.copyEmail}
+    </button>
+  </div>
+  <p class="form-note copy-feedback" role="status" aria-live="polite" aria-atomic="true" data-copy-feedback></p>
+</div>
+<script src="../scripts/direct-contact.ts"></script>

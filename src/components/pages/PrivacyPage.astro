@@ -1,0 +1,16 @@
+---
+
+import { content, type Lang } from '../../data/site';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const localizedContent = content[lang];
+---
+<article class="privacy-content wrap">{localizedContent.privacy.sections.map(item => <section>
+    <h2>{item.heading}</h2>
+    <p>{item.text}</p>
+  </section>)}<div class="provider-links">
+    <a href="https://formspree.io/legal/privacy-policy/">{localizedContent.privacy.providerLabel}</a>
+    <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">{localizedContent.privacy.hostLabel}</a>
+  </div>
+</article>
