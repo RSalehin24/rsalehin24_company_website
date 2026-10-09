@@ -52,7 +52,7 @@ The Cloudflare Worker, Managed Turnstile widget, private Brevo/Turnstile secret 
 - Live Worker checks passed for www/apex CORS preflights, blocked foreign origins, required-field validation and missing spam tokens. A 5 MiB upload was parsed and rejected for missing verification without sending email; this checks upload parsing, not maximum-size email delivery.
 - A live browser check caught Turnstile rejecting `ready()` on an asynchronously loaded script. The loader now renders after the script's load event; the browser regression mock rejects `ready()` to cover the provider's behavior.
 - Browser audits use independent unconfigured/Formspree/Worker fixtures so local production variables cannot change the expected test states. All sends and test widgets remain intercepted in that audit.
-- After deployment, both production contact pages loaded the real Turnstile iframe, passed mobile WCAG scans with no horizontal overflow, and produced no page JavaScript errors. The visible human-verification checkbox was inspected.
+- After deployment, both production contact pages deferred Turnstile until form interaction, then loaded its real iframe, passed mobile WCAG scans with no horizontal overflow, and produced no page JavaScript errors. The visible human-verification checkbox was inspected.
 - The owner approved two complete form tests with TXT attachments. The English test stopped at human verification: Turnstile rejected the automated browser, so no token or form POST was produced. Neither the English nor Bangla test was sent. Complete both submissions in a normal browser.
 - Turnstile now loads on form focus or near the check. Regression checks confirm deferred loading, one script shared by focus/scroll triggers, token reset and the blocked-script error path. Reserved widget space prevents a layout jump.
 
@@ -87,7 +87,7 @@ Earlier production-preview lab results using Lighthouse 13.5.0 and installed Chr
 | /bn/contact/ | 98 | 100 | 100 |
 | /bn/privacy/ | 98 | 100 | 100 |
 
-The live attachment form initially scored 98/100/100 in English and 74–75/100/100 in Bangla. The Bangla report showed verification traffic during the initial paint. After deferring Turnstile until form interaction or proximity, the configured production preview scored 98/100/100 in English and 99/100/100 in Bangla. Recheck these two production URLs after deployment.
+The live attachment form initially scored 98/100/100 in English and 74–75/100/100 in Bangla. The Bangla report showed verification traffic during the initial paint. After deferring Turnstile until form interaction or proximity, the configured production preview scored 98/100/100 in English and 99/100/100 in Bangla. After GitHub Pages deployed commit `d8d466a`, the production URLs scored 96/100/100 at `/contact/` and 100/100/100 at `/bn/contact/`. Scores are performance/accessibility/SEO, using the same mobile Lighthouse configuration.
 
 Fonts and images are self-hosted. Responsive hero images were compressed and cropped at build time, and the primary English/Bengali font is preloaded. Full Lighthouse JSON/HTML reports are stored in .audit/. Deployed scores can vary with network and hosting conditions.
 
