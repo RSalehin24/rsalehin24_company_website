@@ -1,0 +1,54 @@
+type TurnstileOptions = {
+  sitekey: string; action: string; language: string; theme: string; size: string;
+  'error-callback': () => void; 'expired-callback': () => void;
+};
+type TurnstileAPI = {
+  ready(callback: () => void): void;
+  render(element: HTMLElement, options: TurnstileOptions): string;
+  reset(widget: string): void;
+};
+declare global { interface Window { turnstile?: TurnstileAPI; } }
+
+function loadTurnstile(): Promise<TurnstileAPI> {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.addEventListener('load', () => {
+      if (!window.turnstile) return reject(new Error('Verification did not load'));
+      window.turnstile.ready(() => resolve(window.turnstile!));
+    }, { once: true });
+    script.addEventListener('error', () => reject(new Error('Verification is unavailable')), { once: true });
+    document.head.append(script);
+  });
+}
+
+export class ContactChallenge {
+  private widget: string | undefined;
+  private api: TurnstileAPI | undefined;
+
+  constructor(private readonly form: HTMLFormElement, private readonly showError: () => void) {}
+
+  async initialize() {
+    const container = this.form.querySelector<HTMLElement>('[data-turnstile]');
+    if (!container) return;
+    try {
+      this.api = await loadTurnstile();
+      this.widget = this.api.render(container, {
+        sitekey: container.dataset.sitekey || '', action: 'contact',
+        // Turnstile does not currently support Bangla.
+        language: 'en', theme: 'dark', size: 'compact',
+        'error-callback': this.showError, 'expired-callback': () => this.reset(),
+      });
+    } catch { this.showError(); }
+  }
+
+  hasToken() {
+    if (this.form.dataset.provider !== 'brevo') return true;
+    return Boolean(this.form.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]')?.value);
+  }
+
+  reset() {
+    if (this.api && this.widget !== undefined) this.api.reset(this.widget);
+  }
+}

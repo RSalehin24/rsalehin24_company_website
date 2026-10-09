@@ -1,18 +1,18 @@
 ---
 import DirectContact from './DirectContact.astro';
 import { content, pagePath, type Lang } from '../data/site';
-import { formEndpoint } from '../lib/form-config.mjs';
+import { delivery } from '../lib/site-contact';
+import { attachmentAccept } from '../lib/contact-rules.mjs';
 interface Props { lang: Lang; }
 const { lang } = Astro.props;
 const localizedContent = content[lang];
 const contactLabels = localizedContent.contact;
-const endpoint = formEndpoint(import.meta.env.PUBLIC_FORMSPREE_ENDPOINT || '');
 ---
-{endpoint ? <div class="contact-form-panel">
+{delivery ? <div class="contact-form-panel">
   <h2>{contactLabels.formTitle}</h2>
   <p>{contactLabels.formIntro}</p>
   <p class="form-note">{contactLabels.required}</p>
-  <form action={endpoint} method="POST" data-contact-form data-progress={contactLabels.progress} data-success={contactLabels.success} data-error={contactLabels.error} data-invalid={contactLabels.invalid} data-required-error={contactLabels.requiredError} data-email-error={contactLabels.emailError} data-long-error={contactLabels.tooLongError} data-sending={contactLabels.sending} data-submit-label={contactLabels.submit}>
+  <form action={delivery.endpoint} method="POST" enctype="multipart/form-data" data-contact-form data-provider={delivery.provider} data-progress={contactLabels.progress} data-success={contactLabels.success} data-error={contactLabels.error} data-invalid={contactLabels.invalid} data-required-error={contactLabels.requiredError} data-email-error={contactLabels.emailError} data-long-error={contactLabels.tooLongError} data-file-size-error={contactLabels.fileSizeError} data-file-type-error={contactLabels.fileTypeError} data-file-empty-error={contactLabels.fileEmptyError} data-challenge-error={contactLabels.challengeError} data-rate-error={contactLabels.rateError} data-sending={contactLabels.sending} data-submit-label={contactLabels.submit}>
     <div class="form-grid">
       <div class="form-field">
         <label for="name">{contactLabels.name} <span aria-hidden="true">*</span>
@@ -38,6 +38,11 @@ const endpoint = formEndpoint(import.meta.env.PUBLIC_FORMSPREE_ENDPOINT || '');
       </div>
     </div>
     <div class="form-field">
+      <label for="subject">{contactLabels.subject} <span aria-hidden="true">*</span></label>
+      <input id="subject" name="subject" required maxlength="160" aria-describedby="subject-error" />
+      <span class="field-error" id="subject-error"></span>
+    </div>
+    <div class="form-field">
       <label for="service">{contactLabels.service} <span aria-hidden="true">*</span>
       </label>
       <select id="service" name="service" required aria-describedby="service-error">
@@ -52,17 +57,27 @@ const endpoint = formEndpoint(import.meta.env.PUBLIC_FORMSPREE_ENDPOINT || '');
       <textarea id="message" name="message" required rows="6" maxlength="5000" aria-describedby="message-hint message-error"></textarea>
       <span class="field-error" id="message-error"></span>
     </div>
+    <div class="form-field">
+      <label for="attachment">{contactLabels.attachment}</label>
+      <p class="form-note" id="attachment-hint">{contactLabels.attachmentHint}</p>
+      <input id="attachment" name="attachment" type="file" accept={attachmentAccept} aria-describedby="attachment-hint attachment-error" />
+      <span class="field-error" id="attachment-error"></span>
+      {delivery.provider === 'formspree' && <p class="form-note">{contactLabels.attachmentLinks}</p>}
+    </div>
     <div class="honeypot" aria-hidden="true">
       <label for="website">Leave this field empty</label>
       <input id="website" name="_gotcha" type="text" tabindex="-1" autocomplete="off" />
     </div>
-    <input type="hidden" name="_subject" value="RSalehin24 project inquiry" />
     <input type="hidden" name="language" value={lang} />
-    <p class="form-note privacy-note">{contactLabels.privacyBefore} <a href={pagePath(lang,'privacy')}>{contactLabels.privacyLink}</a>{contactLabels.privacyAfter}</p>
+    {delivery.provider === 'brevo' && <div class="challenge-field">
+      <p class="form-note">{contactLabels.challengeLabel}</p>
+      <div data-turnstile data-sitekey={delivery.siteKey}></div>
+    </div>}
+    <p class="form-note privacy-note">{contactLabels.privacyBefore}{' '}{delivery.provider === 'brevo' ? contactLabels.brevoNotice : contactLabels.formspreeNotice}{' '}<a href={pagePath(lang,'privacy')}>{contactLabels.privacyLink}</a>{contactLabels.privacyAfter}</p>
     <p class="form-feedback" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" data-form-status></p>
-    <button type="submit" class="button">{contactLabels.submit}</button>
+    <button type="submit" class="button" disabled={delivery.provider === 'brevo'}>{contactLabels.submit}</button>
     <noscript>
-      <p class="form-note">{contactLabels.nojs}</p>
+      <p class="form-note">{delivery.provider === 'brevo' ? contactLabels.nojsBrevo : contactLabels.nojs}</p>
     </noscript>
   </form>
 </div> : <DirectContact lang={lang} />}

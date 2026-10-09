@@ -6,8 +6,8 @@ Verified on 2026-10-09 against the Astro production output. The GitHub Actions w
 
 - Astro production build: 12 localized content routes, English/Bangla 404 pages and sitemap generated.
 - Astro check: zero errors, warnings or hints.
-- Configuration tests: 3 passed, covering missing delivery configuration, valid Formspree URLs and rejected placeholders/unsafe destinations.
-- Static verification passed for both default and configured output: unique localized titles and descriptions, self-canonicals, reciprocal en/bn and x-default links, Open Graph metadata, business/service structured data, sitemap, robots, CNAME, links, responsive images and 404 noindex.
+- Node tests: 13 passed, covering provider configuration, fixed-recipient email delivery, exact binary attachment encoding, validation, upload/request limits, spam verification, origin/method checks and provider failures/timeouts.
+- Static verification passed for default, Formspree and Cloudflare/Brevo output: unique localized titles and descriptions, self-canonicals, reciprocal en/bn and x-default links, Open Graph metadata, business/service structured data, sitemap, robots, CNAME, links, responsive images and 404 noindex.
 - Public HTML contains no repository links, localhost references or developer setup instructions. Company contact details match the supplied reference.
 
 ## Browser checks
@@ -24,21 +24,26 @@ Verified on 2026-10-09 against the Astro production output. The GitHub Actions w
 
 ## Contact behavior
 
-Tested both languages using a separately built fixture and intercepted Formspree requests. No real inquiry was sent.
+Tested both languages using separate production fixtures for Cloudflare/Brevo and Formspree. Browser requests and the Turnstile widget are intercepted; Worker tests mock both provider APIs. No real inquiry was sent.
 
 - Missing endpoint: direct email/phone options, with no form or unavailable submit button.
-- Required fields, whitespace-only name, invalid email and localized inline errors.
+- Required fields, whitespace-only name, invalid email, missing subject and localized inline errors.
+- Multipart submission includes the subject, message, filename and exact binary attachment bytes.
+- Unsupported, empty and oversized files are blocked before submission. Server tests independently enforce file type, one-file and size rules.
 - Service preselection from inquiry links.
-- Network failure, provider validation errors, rate limits, malformed JSON and unconfirmed responses: text retained and retry enabled.
+- Network failure, provider validation errors, rate limits, malformed JSON and unconfirmed responses: subject/message and selected file retained, retry enabled.
+- A simulated 40-second timeout preserves the draft and file, reports an error and re-enables submission.
 - Progress state and duplicate-submit prevention while a request is pending.
 - Confirmed success: localized feedback and reset form.
 - Honeypot: filled spam field blocks outgoing requests.
 - Configured HTML form retains native validation and a Formspree action without JavaScript.
-- Direct panel contains both an email app link with an encoded inquiry subject and a call link to +8801608537383.
+- Cloudflare delivery verifies tokens before sending and refreshes them after attempts. Expired tokens, missing/failed verification and a blocked verification script are covered. Its no-JavaScript state disables sending and displays direct alternatives.
+- Both providers and languages passed mobile/tablet/desktop axe checks and layout checks, including 200% zoom. Compact Turnstile dimensions are represented by the browser mock. The actual provider widget still requires a live setup check; it uses English because Bengali is unsupported by Turnstile.
+- Direct panel contains separate Gmail and email app links with an encoded inquiry subject, plus a call link to +8801608537383. Gmail popup navigation and prefilled recipient/subject are tested using intercepted browser requests; no real Gmail draft or message is created.
 - English/Bangla copy-email success, denied clipboard permission and missing Clipboard API tested. Failure selects the address for manual copying and re-enables the action.
-- The email address remains selectable and both contact links remain visible without JavaScript. Opening a visitor’s external email app depends on that visitor’s configured mail handler; the copy option supports webmail.
+- The email address remains selectable and Gmail, email app and phone links remain visible without JavaScript. Opening a visitor’s external email app depends on that visitor’s configured mail handler; the copy option supports webmail.
 
-Actual Formspree endpoint creation, destination email verification and confirmed inbox receipt remain launch requirements. These cannot be established by mocked browser tests.
+The Cloudflare Worker, Turnstile widget and Brevo secrets are not configured in the owner's account. Deploying them and confirming inbox/attachment receipt remain required to enable live sending. Missing public configuration continues to show direct options. See [CONTACT.md](CONTACT.md). Mocked tests cannot establish actual mail receipt.
 
 ## Refactoring and brand checks
 
@@ -52,7 +57,7 @@ GitHub Pages is configured to publish through GitHub Actions, with `www.rsalehin
 
 ## Mobile Lighthouse
 
-Local production-preview lab results using Lighthouse 13.5.0 and installed Chrome. All 12 content pages meet the requested targets of performance >=90, accessibility >=95 and SEO >=95.
+Earlier production-preview lab results using Lighthouse 13.5.0 and installed Chrome. All 12 content pages met the requested targets of performance >=90, accessibility >=95 and SEO >=95. These scores predate the attachment form; its configured states passed browser/axe checks, and Lighthouse should be rechecked after the live delivery service is enabled.
 
 | Route | Performance | Accessibility | SEO |
 | --- | ---: | ---: | ---: |
@@ -73,6 +78,6 @@ Fonts and images are self-hosted. Responsive hero images were compressed and cro
 
 ## Remaining launch work
 
-Follow [LAUNCH.md](LAUNCH.md) to configure and verify Formspree and submit the sitemap to Search Console. Pages publishing, the custom domain, DNS and HTTPS have been configured; recheck them after future hosting or DNS changes.
+Follow [CONTACT.md](CONTACT.md) to configure and verify Cloudflare/Brevo sending, and [LAUNCH.md](LAUNCH.md) to submit the sitemap to Search Console. Pages publishing, the custom domain, DNS and HTTPS have been configured; recheck them after future hosting or DNS changes.
 
 EPUB Reader returned external HTTP 200 on 2026-10-09. Recheck reachability immediately before launch. eLibrary has no live button; Personal Financial Management is explicitly planned and at inception.

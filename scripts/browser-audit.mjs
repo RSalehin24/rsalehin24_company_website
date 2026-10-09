@@ -33,6 +33,23 @@ async function verifyDirectContact(page, language) {
  const emailURL=new URL(await emailLink.getAttribute('href'));
  assert.equal(emailURL.pathname,'mail@rsalehin24.me');
  assert.ok(emailURL.searchParams.get('subject').includes('RSalehin24'));
+ const gmailLink=panel.locator('a[href^="https://mail.google.com/mail/"]');
+ await expect(gmailLink).toBeVisible();
+ const gmailURL=new URL(await gmailLink.getAttribute('href'));
+ assert.equal(gmailURL.origin,'https://mail.google.com');
+ assert.equal(gmailURL.searchParams.get('view'),'cm');
+ assert.equal(gmailURL.searchParams.get('to'),'mail@rsalehin24.me');
+ assert.equal(gmailURL.searchParams.get('su'),emailURL.searchParams.get('subject'));
+ await expect(gmailLink).toHaveAttribute('target','_blank');
+ await expect(gmailLink).toHaveAttribute('rel','noopener noreferrer');
+ await page.context().route('https://mail.google.com/**',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Gmail compose test</title>'}));
+ const popupOpened=page.context().waitForEvent('page');
+ await gmailLink.click();
+ const popup=await popupOpened;
+ await popup.waitForLoadState();
+ assert.equal(popup.url(),gmailURL.href);
+ await popup.close();
+ await page.context().unroute('https://mail.google.com/**');
  const address=panel.locator('[data-email-address]');
  await expect(address).toHaveValue('mail@rsalehin24.me');
  await expect(address).toHaveAttribute('readonly','');
@@ -67,8 +84,11 @@ async function verifyWordmark(page) {
  }
 }
 const configured=join(artifacts,'form-site');
-execFileSync(process.execPath,['node_modules/astro/bin/astro.mjs','build','--outDir',configured],{env:{...process.env,PUBLIC_FORMSPREE_ENDPOINT:'https://formspree.io/f/audit1234',ASTRO_TELEMETRY_DISABLED:'1'},stdio:'pipe'});
-const main=await serve(resolve('dist')), fixture=await serve(configured);
+execFileSync(process.execPath,['node_modules/astro/bin/astro.mjs','build','--outDir',configured],{env:{...process.env,PUBLIC_CONTACT_ENDPOINT:'',PUBLIC_TURNSTILE_SITE_KEY:'',PUBLIC_FORMSPREE_ENDPOINT:'https://formspree.io/f/audit1234',ASTRO_TELEMETRY_DISABLED:'1'},stdio:'pipe'});
+const workerConfigured=join(artifacts,'worker-site');
+const workerEndpoint='https://rsalehin24-contact.example.workers.dev/contact';
+execFileSync(process.execPath,['node_modules/astro/bin/astro.mjs','build','--outDir',workerConfigured],{env:{...process.env,PUBLIC_CONTACT_ENDPOINT:workerEndpoint,PUBLIC_TURNSTILE_SITE_KEY:'1x00000000000000000000AA',PUBLIC_FORMSPREE_ENDPOINT:'',ASTRO_TELEMETRY_DISABLED:'1'},stdio:'pipe'});
+const main=await serve(resolve('dist')), fixture=await serve(configured), workerFixture=await serve(workerConfigured);
 const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL || 'chrome',headless:true});
 let checks=0;const results=[];
 try{
@@ -120,49 +140,116 @@ try{
   await plain.goto(main.url+route);
   const panel=plain.locator('[data-direct-contact]');
   await expect(panel.locator('a[href="tel:+8801608537383"]')).toBeVisible();
+  await expect(panel.locator('a[href^="https://mail.google.com/mail/"]')).toBeVisible();
+  await expect(panel.locator('a[href^="mailto:"]')).toBeVisible();
   await expect(panel.locator('[data-email-address]')).toHaveValue('mail@rsalehin24.me');
   await expect(panel.locator('[data-copy-email]')).toBeHidden();
  }
- await plain.goto(fixture.url+'/contact/');await expect(plain.locator('form')).toHaveAttribute('action','https://formspree.io/f/audit1234');assert.equal(await plain.locator('form').evaluate(e=>e.noValidate),false);await nojs.close();
+ await plain.goto(fixture.url+'/contact/');await expect(plain.locator('form')).toHaveAttribute('action','https://formspree.io/f/audit1234');assert.equal(await plain.locator('form').evaluate(e=>e.noValidate),false);
+ await expect(plain.locator('form')).toHaveAttribute('enctype','multipart/form-data');
+ await plain.goto(workerFixture.url+'/contact/');await expect(plain.locator('button[type="submit"]')).toBeDisabled();await expect(plain.locator('noscript')).toBeVisible();
+ await expect(plain.locator('.direct-details a[href="tel:+8801608537383"]')).toBeVisible();await nojs.close();
  results.push('All primary content and navigation readable without JavaScript; configured form retains native validation');
+ const mockChallenge=`window.turnstile={ready:callback=>callback(),render:(container,options)=>{window.auditChallengeOptions=options;const widget=document.createElement('div');widget.style.width=options.size==='compact'?'150px':'300px';widget.style.height=options.size==='compact'?'140px':'65px';container.append(widget);const field=document.createElement('input');field.type='hidden';field.name='cf-turnstile-response';field.value='audit-token';container.append(field);return 'audit-widget';},reset:()=>{document.body.dataset.challengeResets=String(Number(document.body.dataset.challengeResets||0)+1);document.querySelector('[name="cf-turnstile-response"]').value='audit-token';}};`;
+ await page.route('https://challenges.cloudflare.com/**',route=>route.fulfill({status:200,contentType:'application/javascript',body:mockChallenge}));
  await page.setViewportSize({width:1440,height:1000});
  for(const language of ['en','bn']){
   const route=language==='en'?'/contact/':'/bn/contact/';await page.goto(main.url+route);
   await expect(page.locator('[data-direct-contact]')).toBeVisible();assert.equal(await page.locator('form').count(),0);
   await verifyDirectContact(page, language);
-  await page.goto(fixture.url+route+'?service=automation');
+  for(const provider of ['formspree','brevo']) {
+  const destination=provider==='brevo'?workerEndpoint:'https://formspree.io/f/audit1234';
+  const base=provider==='brevo'?workerFixture.url:fixture.url;
+  await page.goto(base+route+'?service=automation');
   const form=page.locator('form');const submit=form.locator('button[type="submit"]');const status=form.locator('[data-form-status]');
+  await expect(form).toHaveAttribute('enctype','multipart/form-data');
+  if(provider==='brevo'){
+   await expect(page.locator('[name="cf-turnstile-response"]')).toHaveValue('audit-token');
+   assert.equal(await page.evaluate(()=>window.auditChallengeOptions.size),'compact');
+   assert.equal(await page.evaluate(()=>window.auditChallengeOptions.language),'en');
+   const resets=await page.evaluate(()=>Number(document.body.dataset.challengeResets||0));
+   await page.evaluate(()=>window.auditChallengeOptions['expired-callback']());
+   assert.equal(await page.evaluate(()=>Number(document.body.dataset.challengeResets)),resets+1);
+  }
   await expect(page.locator('#service')).toHaveValue('automation');
   let calls=0,mode='success',release;
-  await page.route('https://formspree.io/**',async routed=>{
+  let lastSubmission;
+  await page.route(destination,async routed=>{
    if(routed.request().method()==='OPTIONS')return routed.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'accept, content-type'}});
-   calls++;const headers={'Access-Control-Allow-Origin':'*','Content-Type':'application/json'};
+   calls++;lastSubmission=routed.request().postDataBuffer();const headers={'Access-Control-Allow-Origin':'*','Content-Type':'application/json'};
    if(mode==='slow')await new Promise(r=>release=r);
    if(mode==='network')return routed.abort('internetdisconnected');
    if(mode==='provider')return routed.fulfill({status:422,headers,body:JSON.stringify({errors:[{field:'email',message:'Invalid email'}]})});
    if(mode==='rate')return routed.fulfill({status:429,headers,body:'{"error":"rate limited"}'});
    if(mode==='malformed')return routed.fulfill({status:200,headers,body:'invalid'});
    if(mode==='unconfirmed')return routed.fulfill({status:200,headers,body:'{"ok":false}'});
+   if(mode==='challenge')return routed.fulfill({status:422,headers,body:'{"ok":false,"code":"challenge"}'});
    return routed.fulfill({status:200,headers,body:'{"ok":true}'});
   });
   await submit.click();await expect(page.locator('#name')).toBeFocused();await expect(page.locator('#name')).toHaveAttribute('aria-invalid','true');assert.equal(calls,0);
   await page.locator('#name').fill('  ');await page.locator('#email').fill('invalid');await page.locator('#message').fill('A useful project brief.');
   await submit.click();await expect(page.locator('#email')).toHaveAttribute('aria-invalid','true');assert.equal(calls,0);
   await page.locator('#name').fill('Test Inquiry');await page.locator('#email').fill('test@example.com');
-  for(mode of ['network','provider','rate','malformed','unconfirmed']){
-   await submit.click();await expect(status).toHaveAttribute('data-state','error');await expect(page.locator('#message')).toHaveValue('A useful project brief.');await expect(submit).toBeEnabled();
+  await submit.click();await expect(page.locator('#subject')).toBeFocused();assert.equal(calls,0);
+  await page.locator('#subject').fill('A project with an attachment');
+  const attachment=page.locator('#attachment');
+  for(const file of [{name:'unsafe.exe',mimeType:'application/octet-stream',buffer:Buffer.from('test')},{name:'empty.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(0)},{name:'large.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(5*1024*1024+1)}]) {
+   await attachment.setInputFiles(file);await submit.click();await expect(attachment).toHaveAttribute('aria-invalid','true');await expect(attachment).toBeFocused();assert.equal(calls,0);
   }
+  const fileBytes=Buffer.from([0,1,127,128,254,255]);
+  await attachment.setInputFiles({name:'brief.pdf',mimeType:'application/pdf',buffer:fileBytes});
+  if(provider==='brevo') {
+   await page.locator('[name="cf-turnstile-response"]').evaluate(field=>field.value='');
+   await submit.click();await expect(status).toHaveText(await form.getAttribute('data-challenge-error'));assert.equal(calls,0);
+   await page.evaluate(()=>window.turnstile.reset('audit-widget'));
+  }
+  for(mode of ['network','provider','rate','malformed','unconfirmed']){
+   await submit.click();await expect(status).toHaveAttribute('data-state','error');await expect(page.locator('#message')).toHaveValue('A useful project brief.');await expect(page.locator('#subject')).toHaveValue('A project with an attachment');assert.equal(await attachment.evaluate(input=>input.files[0].name),'brief.pdf');await expect(submit).toBeEnabled();
+   if(mode==='rate')await expect(status).toHaveText(await form.getAttribute('data-rate-error'));
+  }
+  if(provider==='brevo'){mode='challenge';await submit.click();await expect(status).toHaveText(await form.getAttribute('data-challenge-error'));}
+  assert.ok(lastSubmission.includes(Buffer.from('name="subject"')));assert.ok(lastSubmission.includes(Buffer.from('A project with an attachment')));assert.ok(lastSubmission.includes(Buffer.from('filename="brief.pdf"')));assert.ok(lastSubmission.includes(fileBytes));
   mode='slow';const before=calls;await submit.click();await expect(submit).toBeDisabled();await expect(form).toHaveAttribute('aria-busy','true');await expect(status).toHaveAttribute('data-state','pending');
   await form.evaluate(f=>{f.requestSubmit();f.requestSubmit();});assert.equal(calls,before+1);release();
-  await expect(status).toHaveAttribute('data-state','success');await expect(page.locator('#message')).toHaveValue('');await expect(submit).toBeEnabled();
-  await page.locator('#name').fill('Test Inquiry');await page.locator('#email').fill('test@example.com');await page.locator('#message').fill('Second inquiry');await page.locator('#service').selectOption('websites');
+  await expect(status).toHaveAttribute('data-state','success');await expect(page.locator('#message')).toHaveValue('');await expect(page.locator('#subject')).toHaveValue('');assert.equal(await attachment.evaluate(input=>input.files.length),0);await expect(submit).toBeEnabled();
+  await page.locator('#name').fill('Test Inquiry');await page.locator('#email').fill('test@example.com');await page.locator('#subject').fill('Second subject');await page.locator('#message').fill('Second inquiry');await page.locator('#service').selectOption('websites');
   await page.locator('[name="_gotcha"]').evaluate(e=>e.value='spam');const spamCalls=calls;await submit.click();await expect(status).toHaveAttribute('data-state','error');assert.equal(calls,spamCalls);
-  const a11y=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();assert.deepEqual(a11y.violations,[]);
-  await page.unroute('https://formspree.io/**');
+  await page.locator('[name="_gotcha"]').evaluate(e=>e.value='');
+  await page.setViewportSize({width:1280,height:900});await page.evaluate(()=>document.documentElement.style.zoom='2');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'form 200% zoom '+provider+' '+language);await page.evaluate(()=>document.documentElement.style.zoom='1');
+  for(const width of [360,768,1440]) {
+   await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'form overflow '+provider+' '+language+' '+width);
+   const a11y=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();assert.deepEqual(a11y.violations,[]);
+   if(provider==='brevo')await page.locator('.contact-form-panel').screenshot({path:join(artifacts,'email-form-'+language+'-'+width+'.png')});
+  }
+  await page.unroute(destination);
+  }
  }
- results.push('Both languages: missing endpoint, validation, service selection, preserved error text, provider/network/rate/invalid-response errors, progress, duplicate prevention, success and honeypot passed; no real submission sent');
+ await page.route('https://challenges.cloudflare.com/**',route=>route.abort('internetdisconnected'));
+ for(const route of ['/contact/','/bn/contact/']){
+  await page.goto(workerFixture.url+route);const form=page.locator('form');
+  await expect(form.locator('[data-form-status]')).toHaveText(await form.getAttribute('data-challenge-error'));
+  await expect(page.locator('.direct-details a[href="tel:+8801608537383"]')).toBeVisible();
+  assert.equal(await page.locator('[name="cf-turnstile-response"]').count(),0);
+ }
+ const timeoutPage=await ctx.newPage();await timeoutPage.clock.install();
+ timeoutPage.on('pageerror',error=>errors.push(error.message));
+ let timedRequest,timeoutCalls=0;
+ await timeoutPage.route('https://formspree.io/f/audit1234',routed=>{timedRequest=routed;timeoutCalls++;});
+ await timeoutPage.goto(fixture.url+'/contact/');
+ for(const [name,value] of Object.entries({name:'Timeout test',email:'test@example.com',subject:'Keep my draft',message:'Keep this message'}))await timeoutPage.locator('#'+name).fill(value);
+ await timeoutPage.locator('#service').selectOption('websites');
+ await timeoutPage.locator('#attachment').setInputFiles({name:'brief.txt',mimeType:'text/plain',buffer:Buffer.from('keep this file')});
+ await timeoutPage.locator('button[type="submit"]').click();await expect(timeoutPage.locator('form')).toHaveAttribute('aria-busy','true');
+ await expect.poll(()=>timeoutCalls).toBe(1);await timeoutPage.clock.fastForward(41_000);
+ await expect(timeoutPage.locator('[data-form-status]')).toHaveAttribute('data-state','error');
+ await expect(timeoutPage.locator('#subject')).toHaveValue('Keep my draft');await expect(timeoutPage.locator('#message')).toHaveValue('Keep this message');
+ assert.equal(await timeoutPage.locator('#attachment').evaluate(input=>input.files[0].name),'brief.txt');
+ await expect(timeoutPage.locator('button[type="submit"]')).toBeEnabled();
+ await timedRequest.abort();await timeoutPage.close();
+ results.push('Both languages and providers: subject/body/attachment multipart delivery, attachment type/empty/size validation, spam verification and expiry, blocked verification script, missing endpoint, preserved text and files after errors, provider/network/rate/invalid-response errors, 40-second timeout, duplicate prevention, success reset and honeypot passed; no real submission sent');
  assert.deepEqual(errors,[]);results.push('No browser JavaScript errors');
- results.push('Both languages: call and email actions in the fallback panel, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have no dot and full-size numerals.');
+ results.push('Both languages: Gmail compose links and popup navigation (intercepted), mail-app and call actions, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have no dot and full-size numerals.');
  await writeFile(join(artifacts,'browser-results.json'),JSON.stringify({date:new Date().toISOString(),checks,results},null,2));
  console.log(results.join('\n'));
-}finally{await browser.close();main.server.close();fixture.server.close();}
+}finally{await browser.close();main.server.close();fixture.server.close();workerFixture.server.close();}

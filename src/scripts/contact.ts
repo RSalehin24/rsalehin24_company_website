@@ -1,6 +1,7 @@
 import { clearFieldError, showFieldError, validationMessage, type ContactField } from '../lib/contact-validation';
+import { ContactChallenge } from './contact-challenge';
 
-const submissionTimeout = 20_000;
+const submissionTimeout = 40_000;
 type FeedbackState = 'pending' | 'success' | 'error';
 
 function requiredElement<T extends Element>(form: HTMLFormElement, selector: string): T {
@@ -25,20 +26,26 @@ async function postInquiry(form: HTMLFormElement) {
       method: 'POST', body: new FormData(form),
       headers: { Accept: 'application/json' }, signal: controller.signal,
     });
-    const result: unknown = await response.json();
-    if (!result || typeof result !== 'object') throw new Error('Invalid submission response');
-    const accepted = response.ok && 'ok' in result && result.ok === true;
-    const errors: unknown[] = 'errors' in result && Array.isArray(result.errors) ? result.errors : [];
-    return { accepted, errors };
+    return await readSubmissionResponse(response);
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function readSubmissionResponse(response: Response) {
+  const result: unknown = await response.json();
+  if (!result || typeof result !== 'object') throw new Error('Invalid submission response');
+  const accepted = response.ok && 'ok' in result && result.ok === true;
+  const errors: unknown[] = 'errors' in result && Array.isArray(result.errors) ? result.errors : [];
+  const code = 'code' in result ? result.code : '';
+  return { accepted, errors, status: response.status, code };
 }
 
 class ContactFormController {
   private readonly button: HTMLButtonElement;
   private readonly feedback: HTMLElement;
   private readonly fields: ContactField[];
+  private readonly challenge: ContactChallenge;
   private sending = false;
 
   constructor(private readonly form: HTMLFormElement) {
@@ -48,6 +55,10 @@ class ContactFormController {
     preselectService(form);
     form.noValidate = true;
     this.fields.forEach(field => field.addEventListener('input', () => clearFieldError(field)));
+    this.fields.forEach(field => field.addEventListener('change', () => clearFieldError(field)));
+    this.challenge = new ContactChallenge(form, () => this.showFeedback(form.dataset.challengeError || '', 'error'));
+    void this.challenge.initialize();
+    this.button.disabled = false;
     form.addEventListener('submit', event => this.submit(event));
   }
 
@@ -99,20 +110,34 @@ class ContactFormController {
     const result = await postInquiry(this.form);
     if (!result.accepted) {
       this.showProviderErrors(result.errors);
-      throw new Error('Submission was not confirmed');
+      const message = result.status === 429 ? this.form.dataset.rateError :
+        result.code === 'challenge' ? this.form.dataset.challengeError : this.form.dataset.error;
+      this.showFeedback(message || '', 'error');
+      this.feedback.focus();
+      return;
     }
     this.form.reset();
     this.showFeedback(this.form.dataset.success || '', 'success');
     this.feedback.focus();
   }
 
-  private async submit(event: SubmitEvent) {
-    event.preventDefault();
-    if (this.sending || !this.validate()) return;
+  private canSubmit() {
+    if (this.sending || !this.validate()) return false;
+    if (!this.challenge.hasToken()) {
+      this.showFeedback(this.form.dataset.challengeError || '', 'error');
+      this.feedback.focus();
+      return false;
+    }
     if (this.form.querySelector<HTMLInputElement>('[name="_gotcha"]')?.value) {
       this.showFeedback(this.form.dataset.error || '', 'error');
-      return;
+      return false;
     }
+    return true;
+  }
+
+  private async submit(event: SubmitEvent) {
+    event.preventDefault();
+    if (!this.canSubmit()) return;
     this.beginSubmission();
     try {
       await this.sendInquiry();
@@ -120,6 +145,7 @@ class ContactFormController {
       this.showFeedback(this.form.dataset.error || '', 'error');
       this.feedback.focus();
     } finally {
+      this.challenge.reset();
       this.finishSubmission();
     }
   }

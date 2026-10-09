@@ -1,6 +1,12 @@
+import { attachmentError } from './contact-rules.mjs';
+
 export type ContactField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 export function validationMessage(field: ContactField, labels: DOMStringMap): string | null {
+  if (field instanceof HTMLInputElement && field.type === 'file') {
+    const error = attachmentError(field.files?.[0]);
+    return error ? labels[error] || labels.invalid || '' : null;
+  }
   if (field.required && !field.value.trim()) return labels.requiredError || '';
   if (field.validity.typeMismatch) return labels.emailError || '';
   if ('maxLength' in field && field.maxLength > 0 && field.value.length > field.maxLength) {

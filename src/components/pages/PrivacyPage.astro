@@ -1,16 +1,26 @@
 ---
 
 import { content, type Lang } from '../../data/site';
+import { delivery } from '../../lib/site-contact';
 
 interface Props { lang: Lang; }
 const { lang } = Astro.props;
 const localizedContent = content[lang];
+const formspree = delivery?.provider === 'formspree';
 ---
 <article class="privacy-content wrap">{localizedContent.privacy.sections.map(item => <section>
     <h2>{item.heading}</h2>
     <p>{item.text}</p>
-  </section>)}<div class="provider-links">
-    <a href="https://formspree.io/legal/privacy-policy/">{localizedContent.privacy.providerLabel}</a>
+  </section>)}
+  <section>
+    <h2>{localizedContent.privacy.processingHeading}</h2>
+    <p>{formspree ? localizedContent.privacy.formspreeProcessing : localizedContent.privacy.brevoProcessing}</p>
+  </section>
+  <div class="provider-links">
+    {formspree ? <a href="https://formspree.io/legal/privacy-policy/">{localizedContent.privacy.providerLabel}</a> : <>
+      <a href="https://www.brevo.com/legal/privacypolicy/">{localizedContent.privacy.brevoLabel}</a>
+      <a href="https://www.cloudflare.com/privacypolicy/">{localizedContent.privacy.cloudflareLabel}</a>
+    </>}
     <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">{localizedContent.privacy.hostLabel}</a>
   </div>
 </article>

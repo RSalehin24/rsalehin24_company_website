@@ -1,17 +1,10 @@
 # Launch RSalehin24 on GitHub Pages
 
-## Formspree delivery: required before launch
+## Email delivery: required to enable the form
 
-1. Create a Formspree form for `mail@rsalehin24.me` and complete the destination email verification.
-2. Copy the public endpoint in the form `https://formspree.io/f/FORM_ID`. Do not use a private API key.
-3. Configure provider spam filtering and restrict the form to `www.rsalehin24.me` (and the local preview origin while testing, if needed). The site also sends Formspree's `_gotcha` honeypot field. If provider CAPTCHA is enabled, verify its AJAX behavior before release.
-4. For local testing, copy `.env.example` to `.env` and set `PUBLIC_FORMSPREE_ENDPOINT` to the verified endpoint. Rebuild and preview.
-5. On GitHub, open repository Settings → Secrets and variables → Actions → Variables, and create the repository variable `PUBLIC_FORMSPREE_ENDPOINT` with that public endpoint. The workflow passes it to the production build.
-6. Submit one real English inquiry and one real Bangla inquiry from the deployed contact page. Confirm receipt in `mail@rsalehin24.me`, correct reply-to address, full message, optional fields and selected service. A displayed success alone does not verify inbox delivery.
-7. Check one native submission with JavaScript disabled. Formspree will provide its own confirmation page. The JavaScript flow stays on the company site.
-8. If delivery fails, keep the variable empty and rebuild; email and phone remain available. The automated contact tests use mocked responses and do not create an endpoint or verify real mail.
+Follow [CONTACT.md](CONTACT.md) to deploy the Cloudflare Worker, configure Brevo and Turnstile, and set the two public GitHub variables. This enables subject, message and attachment submission directly on the site, with delivery to `mail@rsalehin24.me`. The existing Formspree alternative requires a paid plan for uploads and delivers file links. Keep delivery unconfigured until it is ready; direct email and phone remain available.
 
-[Formspree form setup and submission documentation](https://help.formspree.io/articles/building-your-form/submit-forms-with-javascript-ajax/).
+Confirm inbox receipt in both languages, the entered subject/body, reply address and attachment contents. Automated tests mock the sending APIs and cannot verify actual receipt.
 
 ## Repository and Pages
 
@@ -62,7 +55,7 @@ Technical readiness and useful Dhaka/Bangladesh content do not guarantee search 
 ## Final launch checks
 
 - Recheck `https://ereader.rsalehin24.me` and the public product states.
-- Confirm actual Formspree email receipt in both languages.
+- Confirm actual email and attachment receipt in both languages using [CONTACT.md](CONTACT.md).
 - Confirm public pages contain no repository links or development instructions.
 - Confirm all text and images load, the menu and language switch work, and mobile/desktop layouts remain usable.
 - Confirm privacy text still matches hosting, fields and providers. No analytics are included in the initial release.

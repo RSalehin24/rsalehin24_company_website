@@ -45,7 +45,7 @@ export const content = {
       ],
       "privacy": [
         "Inquiry privacy notice | RSalehin24",
-        "Learn how RSalehin24 uses project inquiry details, how Formspree processes contact submissions, and how to ask about your data. No analytics in this release."
+        "Learn how RSalehin24 uses project inquiry details and attachments, how email delivery providers process submissions, and how to ask about your data."
       ]
     },
     "ui": {
@@ -246,39 +246,54 @@ export const content = {
       "emailLabel": "Email",
       "phoneLabel": "Phone",
       "addressLabel": "Address",
-      "formTitle": "Tell us about your project",
-      "formIntro": "A brief description of your goals and current challenges is enough to begin.",
+      "formTitle": "Send us an email",
+      "formIntro": "Write to mail@rsalehin24.me directly from this form. You can attach a document or image.",
       "unconfiguredTitle": "Let’s start by email or phone.",
       "unconfiguredText": "Send a little about your business, the service you’re interested in, and what you’d like to achieve.",
       "emailCta": "Open your email app",
+      "gmailCta": "Open Gmail",
+      "gmailNewTab": "(opens in a new tab)",
       "emailSubject": "RSalehin24 project inquiry",
       "phoneCta": "Call us",
       "copyEmail": "Copy email",
-      "emailHelp": "The email link opens your configured email app. Using webmail? Copy the address below and compose a message there.",
+      "emailHelp": "Or copy our email address.",
       "emailCopied": "Email address copied. Paste it into your email service to send your project details.",
       "copyEmailError": "Copying is unavailable. The email address is selected; copy it manually and paste it into your email service.",
       "required": "Fields marked * are required.",
       "name": "Name",
-      "email": "Email",
+      "email": "Your email (for replies)",
       "company": "Company (optional)",
       "phone": "Phone (optional)",
       "service": "Service interest",
       "servicePlaceholder": "Choose a service",
       "otherService": "Something else / not sure yet",
-      "message": "Project message",
+      "subject": "Subject",
+      "message": "Message",
       "messageHint": "What do you want to build or improve? Please avoid sharing passwords or sensitive financial information.",
-      "submit": "Send inquiry",
-      "privacyBefore": "We use your details to respond to your inquiry. Formspree processes the submission. Read our",
+      "attachment": "Attachment (optional)",
+      "attachmentHint": "One PDF, Word document, text file, PNG or JPEG image. Maximum 5 MB.",
+      "attachmentLinks": "Your file will be shared with us as a download link.",
+      "fileSizeError": "Choose a file no larger than 5 MB.",
+      "fileTypeError": "Choose a PDF, DOC, DOCX, TXT, PNG, JPG or JPEG file with a simple filename.",
+      "fileEmptyError": "This file is empty. Please choose another file.",
+      "challengeLabel": "Spam protection",
+      "challengeError": "Please complete the spam check. If it cannot load, contact us by email or phone.",
+      "rateError": "Too many attempts. Please wait a moment and try again. Your message and attachment are still here.",
+      "submit": "Send email",
+      "privacyBefore": "We use your details to respond to your inquiry.",
+      "brevoNotice": "Cloudflare and Brevo process the message and attachment. Read our",
+      "formspreeNotice": "Formspree processes the message and file. Read our",
       "privacyLink": "privacy notice",
       "privacyAfter": ".",
       "nojs": "This form also works without JavaScript. Formspree will show its confirmation page after submission.",
+      "nojsBrevo": "Sending from this form needs JavaScript for the spam check. You can email mail@rsalehin24.me or call +8801608537383 instead.",
       "invalid": "Please check the highlighted fields before sending.",
       "requiredError": "Please complete this field.",
       "emailError": "Please enter a valid email address.",
       "tooLongError": "Please shorten this field to the allowed length.",
       "progress": "Sending your inquiry…",
       "success": "Your inquiry was accepted. Thank you for getting in touch.",
-      "error": "We could not confirm your inquiry was sent. Your text is still here. Please try again, or contact us by email or phone.",
+      "error": "We could not confirm your email was sent. Your message and attachment are still here. Please try again, or contact us by email or phone.",
       "sending": "Sending…"
     },
     "privacy": {
@@ -288,15 +303,11 @@ export const content = {
       "sections": [
         {
           "heading": "Information you share",
-          "text": "When the contact form is available, it asks for your name, email, service interest and project message. Company and phone are optional. If you email or call directly, we receive the information you choose to share through that channel."
+          "text": "When the contact form is available, it asks for your name, reply email, service interest, email subject and message. Company, phone and one attachment are optional. We receive the filename and contents of a file you choose to submit. If you email or call directly, we receive the information you choose to share through that channel."
         },
         {
           "heading": "Why we use it",
           "text": "We use your inquiry details to respond, understand your project and communicate about potential work. We do not use the inquiry form to subscribe you to a marketing list."
-        },
-        {
-          "heading": "How the form is processed",
-          "text": "When enabled, the form sends your inquiry to Formspree, which processes submissions and forwards them to our email. Its service may also process technical information, such as IP addresses, for delivery and spam prevention. The form does not send anything while you type."
         },
         {
           "heading": "Hosting, cookies and analytics",
@@ -311,7 +322,12 @@ export const content = {
           "text": "For questions about this notice or your inquiry information, email mail@rsalehin24.me."
         }
       ],
+      "processingHeading": "How the form is processed",
+      "brevoProcessing": "When enabled with Cloudflare and Brevo, the form sends your message and optional attachment through a Cloudflare Worker to Brevo, which sends an email to mail@rsalehin24.me. The Worker does not save submissions in a database. Brevo and our email provider may retain message data under their own policies. Cloudflare Turnstile processes technical information, such as IP addresses and browser information, to prevent spam. Message text and file contents are sent only when you submit the form.",
+      "formspreeProcessing": "When enabled with Formspree, the form sends your message and optional file to Formspree. It forwards the message and a file download link to our email and stores submissions and files under its account settings. Its service may process technical information, such as IP addresses, for delivery and spam prevention. Message text and file contents are sent only when you submit the form.",
       "providerLabel": "Formspree privacy policy",
+      "brevoLabel": "Brevo privacy policy",
+      "cloudflareLabel": "Cloudflare privacy policy",
       "hostLabel": "GitHub privacy statement"
     }
   },
@@ -347,7 +363,7 @@ export const content = {
       ],
       "privacy": [
         "প্রকল্পের অনুসন্ধান ও গোপনীয়তা | RSalehin24",
-        "প্রকল্পের অনুসন্ধানে দেওয়া তথ্য কীভাবে ব্যবহার করে RSalehin24, Formspree-এর ভূমিকা এবং তথ্য সম্পর্কে যোগাযোগের উপায় জানুন। এই সংস্করণে অ্যানালিটিক্স নেই।"
+        "প্রকল্পের অনুসন্ধান ও সংযুক্তি কীভাবে ব্যবহার করে RSalehin24, ইমেইল সেবাদাতার ভূমিকা এবং তথ্য সম্পর্কে যোগাযোগের উপায় জানুন।"
       ]
     },
     "ui": {
@@ -548,39 +564,54 @@ export const content = {
       "emailLabel": "ইমেইল",
       "phoneLabel": "ফোন",
       "addressLabel": "ঠিকানা",
-      "formTitle": "আপনার প্রকল্প সম্পর্কে বলুন",
-      "formIntro": "আপনার লক্ষ্য ও বর্তমান সমস্যার সংক্ষিপ্ত বিবরণ দিয়েই শুরু করা যায়।",
+      "formTitle": "আমাদের ইমেইল পাঠান",
+      "formIntro": "এই ফর্ম থেকেই mail@rsalehin24.me-এ লিখুন। চাইলে একটি নথি বা ছবি সংযুক্ত করতে পারেন।",
       "unconfiguredTitle": "ইমেইল বা ফোনে কথা শুরু করি।",
       "unconfiguredText": "আপনার ব্যবসা, যে সেবায় আগ্রহী এবং কী অর্জন করতে চান তা সংক্ষেপে জানান।",
       "emailCta": "আপনার ইমেইল অ্যাপ খুলুন",
+      "gmailCta": "Gmail খুলুন",
+      "gmailNewTab": "(নতুন ট্যাবে খুলবে)",
       "emailSubject": "RSalehin24 প্রকল্পের অনুসন্ধান",
       "phoneCta": "ফোন করুন",
       "copyEmail": "ইমেইল কপি করুন",
-      "emailHelp": "ইমেইলের লিংকটি আপনার সেট করা ইমেইল অ্যাপ খোলে। ওয়েবমেইল ব্যবহার করলে নিচের ঠিকানা কপি করে সেখানে বার্তা লিখুন।",
+      "emailHelp": "অথবা আমাদের ইমেইল ঠিকানা কপি করুন।",
       "emailCopied": "ইমেইল ঠিকানা কপি হয়েছে। আপনার ইমেইল সেবায় পেস্ট করে প্রকল্পের বিস্তারিত পাঠান।",
       "copyEmailError": "কপি করা যাচ্ছে না। ইমেইল ঠিকানা নির্বাচন করা আছে; নিজে কপি করে আপনার ইমেইল সেবায় পেস্ট করুন।",
       "required": "* চিহ্ন দেওয়া ঘরগুলো পূরণ করতে হবে।",
       "name": "নাম",
-      "email": "ইমেইল",
+      "email": "আপনার ইমেইল (উত্তর দেওয়ার জন্য)",
       "company": "কোম্পানি (ঐচ্ছিক)",
       "phone": "ফোন (ঐচ্ছিক)",
       "service": "কোন সেবায় আগ্রহী",
       "servicePlaceholder": "একটি সেবা বেছে নিন",
       "otherService": "অন্য কিছু / এখনো নিশ্চিত নই",
-      "message": "প্রকল্পের বিবরণ",
+      "subject": "বিষয়",
+      "message": "বার্তা",
       "messageHint": "কী তৈরি করতে বা উন্নত করতে চান? পাসওয়ার্ড বা সংবেদনশীল আর্থিক তথ্য দেবেন না।",
-      "submit": "অনুসন্ধান পাঠান",
-      "privacyBefore": "আপনার অনুসন্ধানের উত্তর দিতে তথ্য ব্যবহার করি। Formspree পাঠানো তথ্য প্রক্রিয়া করে। পড়ুন আমাদের",
+      "attachment": "সংযুক্তি (ঐচ্ছিক)",
+      "attachmentHint": "একটি PDF, Word নথি, টেক্সট ফাইল, PNG বা JPEG ছবি। সর্বোচ্চ ৫ MB।",
+      "attachmentLinks": "আপনার ফাইলটি ডাউনলোড লিংক হিসেবে আমাদের কাছে পৌঁছাবে।",
+      "fileSizeError": "৫ MB বা তার কম আকারের ফাইল বেছে নিন।",
+      "fileTypeError": "সহজ নামের PDF, DOC, DOCX, TXT, PNG, JPG বা JPEG ফাইল বেছে নিন।",
+      "fileEmptyError": "এই ফাইলটি খালি। অন্য একটি ফাইল বেছে নিন।",
+      "challengeLabel": "স্প্যাম প্রতিরোধ",
+      "challengeError": "স্প্যাম যাচাই সম্পন্ন করুন। এটি চালু না হলে ইমেইল বা ফোনে যোগাযোগ করুন।",
+      "rateError": "অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন। আপনার বার্তা ও সংযুক্তি এখানেই আছে।",
+      "submit": "ইমেইল পাঠান",
+      "privacyBefore": "আপনার অনুসন্ধানের উত্তর দিতে তথ্য ব্যবহার করি।",
+      "brevoNotice": "Cloudflare ও Brevo বার্তা এবং সংযুক্তি প্রক্রিয়া করে। পড়ুন আমাদের",
+      "formspreeNotice": "Formspree বার্তা ও ফাইল প্রক্রিয়া করে। পড়ুন আমাদের",
       "privacyLink": "গোপনীয়তার নোটিশ",
       "privacyAfter": "।",
       "nojs": "জাভাস্ক্রিপ্ট ছাড়াও এই ফর্ম কাজ করে। পাঠানোর পর Formspree নিশ্চিতকরণের পাতা দেখাবে।",
+      "nojsBrevo": "স্প্যাম যাচাইয়ের জন্য এই ফর্মে জাভাস্ক্রিপ্ট প্রয়োজন। বিকল্প হিসেবে mail@rsalehin24.me-এ ইমেইল বা +8801608537383 নম্বরে ফোন করতে পারেন।",
       "invalid": "পাঠানোর আগে চিহ্নিত ঘরগুলো ঠিক করুন।",
       "requiredError": "এই ঘরটি পূরণ করুন।",
       "emailError": "সঠিক ইমেইল ঠিকানা লিখুন।",
       "tooLongError": "অনুমোদিত দৈর্ঘ্যের মধ্যে লিখুন।",
       "progress": "আপনার অনুসন্ধান পাঠানো হচ্ছে…",
       "success": "আপনার অনুসন্ধান গ্রহণ করা হয়েছে। যোগাযোগের জন্য ধন্যবাদ।",
-      "error": "আপনার অনুসন্ধান পাঠানো হয়েছে কি না নিশ্চিত হওয়া যায়নি। লেখা এখানেই আছে। আবার চেষ্টা করুন অথবা ইমেইল বা ফোনে যোগাযোগ করুন।",
+      "error": "আপনার ইমেইল পাঠানো হয়েছে কি না নিশ্চিত হওয়া যায়নি। বার্তা ও সংযুক্তি এখানেই আছে। আবার চেষ্টা করুন অথবা ইমেইল বা ফোনে যোগাযোগ করুন।",
       "sending": "পাঠানো হচ্ছে…"
     },
     "privacy": {
@@ -590,15 +621,11 @@ export const content = {
       "sections": [
         {
           "heading": "আপনি যে তথ্য দেন",
-          "text": "যোগাযোগ ফর্ম চালু থাকলে এতে নাম, ইমেইল, আগ্রহের সেবা ও প্রকল্পের বিবরণ চাওয়া হয়। কোম্পানি ও ফোন ঐচ্ছিক। সরাসরি ইমেইল বা ফোন করলে আপনি সেই মাধ্যমে যে তথ্য দেন আমরা তা পাই।"
+          "text": "যোগাযোগ ফর্ম চালু থাকলে এতে নাম, উত্তর দেওয়ার ইমেইল, আগ্রহের সেবা, ইমেইলের বিষয় ও বার্তা চাওয়া হয়। কোম্পানি, ফোন এবং একটি সংযুক্তি ঐচ্ছিক। জমা দেওয়া ফাইলের নাম ও বিষয়বস্তু আমরা পাই। সরাসরি ইমেইল বা ফোন করলে আপনি সেই মাধ্যমে যে তথ্য দেন আমরা তা পাই।"
         },
         {
           "heading": "কেন ব্যবহার করি",
           "text": "উত্তর দেওয়া, আপনার প্রকল্প বোঝা এবং সম্ভাব্য কাজ নিয়ে যোগাযোগের জন্য অনুসন্ধানের তথ্য ব্যবহার করি। এই ফর্মের মাধ্যমে আপনাকে কোনো বিপণনের তালিকায় যুক্ত করি না।"
-        },
-        {
-          "heading": "ফর্মের তথ্য প্রক্রিয়াকরণ",
-          "text": "চালু থাকলে ফর্মটি আপনার অনুসন্ধান Formspree-এ পাঠায়। তারা তথ্য প্রক্রিয়া করে আমাদের ইমেইলে পাঠায়। পাঠানো ও স্প্যাম প্রতিরোধের জন্য তাদের সেবা আইপি ঠিকানার মতো প্রযুক্তিগত তথ্যও প্রক্রিয়া করতে পারে। আপনি লেখার সময় ফর্ম কোনো তথ্য পাঠায় না।"
         },
         {
           "heading": "হোস্টিং, কুকি ও অ্যানালিটিক্স",
@@ -614,6 +641,11 @@ export const content = {
         }
       ],
       "providerLabel": "Formspree-এর গোপনীয়তা নীতি",
+      "processingHeading": "ফর্মের তথ্য প্রক্রিয়াকরণ",
+      "brevoProcessing": "Cloudflare ও Brevo দিয়ে চালু থাকলে ফর্মের বার্তা ও ঐচ্ছিক সংযুক্তি Cloudflare Worker-এর মাধ্যমে Brevo-এ যায়। Brevo তা mail@rsalehin24.me-এ ইমেইল হিসেবে পাঠায়। Worker কোনো ডেটাবেসে অনুসন্ধান সংরক্ষণ করে না। Brevo ও আমাদের ইমেইল সেবাদাতা নিজেদের নীতি অনুযায়ী বার্তার তথ্য রাখতে পারে। স্প্যাম প্রতিরোধে Cloudflare Turnstile আইপি ঠিকানা ও ব্রাউজারের তথ্যের মতো প্রযুক্তিগত তথ্য প্রক্রিয়া করে। বার্তা ও ফাইলের বিষয়বস্তু শুধু ফর্ম জমা দেওয়ার সময় পাঠানো হয়।",
+      "formspreeProcessing": "Formspree দিয়ে চালু থাকলে ফর্মের বার্তা ও ঐচ্ছিক ফাইল Formspree-এ যায়। তারা বার্তা ও ফাইলের ডাউনলোড লিংক আমাদের ইমেইলে পাঠায় এবং অ্যাকাউন্টের সেটিংস অনুযায়ী তথ্য ও ফাইল সংরক্ষণ করে। পাঠানো ও স্প্যাম প্রতিরোধে তাদের সেবা আইপি ঠিকানার মতো প্রযুক্তিগত তথ্য প্রক্রিয়া করতে পারে। বার্তা ও ফাইলের বিষয়বস্তু শুধু ফর্ম জমা দেওয়ার সময় পাঠানো হয়।",
+      "brevoLabel": "Brevo-এর গোপনীয়তা নীতি",
+      "cloudflareLabel": "Cloudflare-এর গোপনীয়তা নীতি",
       "hostLabel": "GitHub-এর গোপনীয়তা বিবৃতি"
     }
   }

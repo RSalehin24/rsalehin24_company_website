@@ -1,0 +1,78 @@
+# Enable the email form
+
+The English and Bangla contact pages include name, reply email, optional company/phone, service interest, subject, message and one optional attachment. Allowed files are PDF, DOC, DOCX, TXT, PNG and JPEG, up to 5 MiB (labelled 5 MB). The recommended delivery path is GitHub Pages → Cloudflare Worker → Brevo → `mail@rsalehin24.me`. Files arrive as actual email attachments. The website stays hosted on GitHub Pages.
+
+Until a provider is configured, the public site shows direct contact options. A local preview or successful automated test cannot confirm inbox delivery.
+
+## 1. Prepare Brevo
+
+In your existing Brevo account, confirm that transactional email sending is enabled and that `mail@rsalehin24.me` is a verified sender. The existing Brevo DNS records help authenticate your domain, but they do not create an API key or confirm that transactional sending is enabled. Create an API key in Brevo's SMTP & API settings. Keep it for the Worker secret below; do not put it in GitHub variables, website code or a chat message.
+
+The Worker fixes the recipient to `mail@rsalehin24.me`, uses your verified sender in the From header, and sets Reply-To to the visitor's email. It sends a plain text and escaped HTML version of the message, project details and the optional base64-encoded attachment. The visitor cannot choose another recipient.
+
+[Brevo transactional email API](https://developers.brevo.com/reference/send-transac-email).
+
+## 2. Create the spam check
+
+In Cloudflare → Turnstile, create a **Managed** widget for `www.rsalehin24.me` and `rsalehin24.me`. Keep pre-clearance off. Copy the public **site key** and private **secret key**. The site uses the public key; the Worker verifies the secret, token hostname and `contact` action before sending any email. Tokens are single-use and are refreshed after each submission attempt.
+
+[Turnstile widget setup](https://developers.cloudflare.com/turnstile/get-started/widget-management/dashboard/), [server verification](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
+
+The compact widget fits narrow mobile forms. Its own interface uses English because [Turnstile does not currently support Bengali](https://developers.cloudflare.com/turnstile/reference/supported-languages/); the form labels, validation and feedback remain fully localized.
+
+## 3. Deploy the Worker
+
+In Cloudflare → Workers & Pages, create a Worker connected to this GitHub repository. This deploys the email service separately from the GitHub Pages website.
+
+| Setting | Value |
+| --- | --- |
+| Worker name | `rsalehin24-contact` |
+| Production branch | `main` |
+| Root directory | Repository root |
+| Build command | `npm test` |
+| Deploy command | `npx wrangler deploy --config worker/wrangler.jsonc` |
+
+The entry point is `worker/contact.mjs`. No additional repository dependency is required. Keep the Worker name consistent with `worker/wrangler.jsonc`. Disable deployments from non-production branches unless you intend to configure previews separately.
+
+Open the Worker → Settings → Variables and Secrets. Add these as **Secret** values:
+
+- `BREVO_API_KEY`: the API key created in Brevo.
+- `TURNSTILE_SECRET_KEY`: the private Turnstile secret key.
+
+The plain text variable `BREVO_SENDER_EMAIL` defaults to `mail@rsalehin24.me` in `worker/wrangler.jsonc`. If Brevo verifies a different sender, change this value in that file and deploy again. The recipient remains fixed.
+
+Copy the deployed Worker URL and append `/contact`, for example `https://rsalehin24-contact.YOUR_SUBDOMAIN.workers.dev/contact`. Keep its `workers.dev` URL enabled. No DNS changes to www, the apex, mail, library or ereader are needed. Requests without the approved website origin or with missing credentials are rejected; opening the URL directly in a browser is not an email test.
+
+[Cloudflare Git builds](https://developers.cloudflare.com/workers/ci-cd/builds/), [Worker secrets](https://developers.cloudflare.com/workers/configuration/secrets/).
+
+## 4. Enable the form on GitHub Pages
+
+In the GitHub repository → Settings → Secrets and variables → Actions → **Variables**, add:
+
+- `PUBLIC_CONTACT_ENDPOINT`: the deployed Worker URL ending in `/contact`.
+- `PUBLIC_TURNSTILE_SITE_KEY`: the public Turnstile site key.
+
+Leave `PUBLIC_FORMSPREE_ENDPOINT` empty for this setup. Never add the Brevo API key or Turnstile secret to a `PUBLIC_` variable. Rerun the **Build and deploy to GitHub Pages** workflow. Changing a variable alone does not rebuild the static site.
+
+For local development, put the same public values in ignored `.env`, then rebuild. Turnstile must allow your local hostname if you want to test the real widget locally. The Worker accepts only the two production website origins; use the mocked audit for local testing without weakening the production origin checks.
+
+## 5. Confirm delivery
+
+From the deployed English contact page, submit a message with a small attachment and a reply email you control. Confirm all of the following in `mail@rsalehin24.me`:
+
+- The message arrived, with the entered subject and full body.
+- The attachment opens and contains the original file contents.
+- Reply uses the visitor's email.
+- Company, phone and service details are included.
+
+Repeat from the Bangla page, including Bengali subject/body text. The success message means Brevo accepted the send request; it does not prove that the mailbox received it. Check Brevo's transactional logs and spam folder if receipt is delayed. Monitor account sending limits, Worker CPU limits and large-file behavior on your chosen service plans.
+
+The frontend preserves text and the selected file on errors, prevents duplicate clicks, and resets only after confirmed acceptance. It has a 40-second timeout. The Worker limits total request size, validates fields/files, checks a honeypot, verifies Turnstile, and does not store submissions in a database or log their contents. It does not retry an uncertain send automatically. With JavaScript disabled or a blocked verification service, visitors can use the visible direct email and phone links.
+
+## Formspree alternative
+
+The existing Formspree integration remains available. Create and verify a form delivering to `mail@rsalehin24.me`, with file uploads enabled. File uploads require a paid Personal, Professional or Business plan; notification emails contain download links rather than actual attached files. Enable provider storage, configure spam protection and restrict allowed domains. Configure `PUBLIC_FORMSPREE_ENDPOINT` using the public `https://formspree.io/f/FORM_ID` URL, leave both Worker variables empty, and rebuild. The privacy notice and file help adapt to this provider.
+
+Test actual receipt, subject, reply address, message and file download links in both languages. Also test native submission with JavaScript disabled. Formspree enforces its own upload limits; the enhanced frontend applies the site's 5 MiB limit, while native submissions use the provider's limits. A free Formspree form cannot satisfy the attachment requirement.
+
+[Formspree file uploads](https://help.formspree.io/articles/building-your-form/file-uploads/), [plans and file delivery](https://formspree.io/plans/).

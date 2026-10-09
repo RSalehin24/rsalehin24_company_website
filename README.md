@@ -28,8 +28,9 @@ Open `http://127.0.0.1:4321`. Primary content is rendered into HTML; JavaScript 
 - `src/data/site.ts` holds company details, both languages, page metadata, service descriptions, product stages and process content.
 - `src/layouts/PageLayout.astro` handles shared navigation, footer, canonical/hreflang, Open Graph text and structured data.
 - `src/components/SitePage.astro` selects a page component from `src/components/pages/`; `PageIntro.astro`, `ProcessSection.astro` and `Wordmark.astro` share repeated sections.
-- `src/components/ContactForm.astro` renders a configured form or `DirectContact.astro`. `ContactMethods.astro` provides the email app link, call action and selectable/copyable email address.
-- `src/scripts/contact.ts` manages submission state; `src/lib/contact-validation.ts` handles field validation and errors.
+- `src/components/ContactForm.astro` renders a configured form or `DirectContact.astro`. `ContactMethods.astro` provides Gmail and email app links, a call action and selectable/copyable email address.
+- `src/scripts/contact.ts` manages submission state; `contact-challenge.ts` handles Turnstile and `src/lib/contact-validation.ts` handles validation. Shared file rules live in `src/lib/contact-rules.mjs`.
+- `worker/contact.mjs` accepts validated submissions and sends email with actual attachments through Brevo. `worker/wrangler.jsonc` configures its separate Cloudflare deployment.
 - `src/styles/global.css` contains the dark forest design and responsive rules.
 - `src/assets/forest-lake.jpg` is the licensed source photo; Astro creates local responsive WebP and JPEG output.
 - Company details were taken from the supplied `info.md` reference and are centralized in `src/data/site.ts`.
@@ -40,15 +41,15 @@ EPUB Reader is linked only to `company.readerUrl`, verified against its domain f
 
 ## Contact delivery
 
-Leave `PUBLIC_FORMSPREE_ENDPOINT` empty until the owner creates a Formspree form and confirms delivery to `mail@rsalehin24.me`. The default production site provides email and phone actions together. Email links open the visitor’s configured email app; visitors using webmail can copy the address instead. When clipboard access fails, the address is selected for manual copying. Without JavaScript, the email address remains selectable and both contact links remain usable.
+The form takes a reply email, subject, message and optional attachment, alongside the existing project fields. Cloudflare + Brevo sends real attachments to `mail@rsalehin24.me`. Deploy the Worker, set its private secrets, then add `PUBLIC_CONTACT_ENDPOINT` and `PUBLIC_TURNSTILE_SITE_KEY` as GitHub repository variables. See [email setup](docs/CONTACT.md) for exact steps and inbox verification. No new website DNS records are required.
 
-Copy `.env.example` to `.env` for local configuration. This is a public form URL, not an API key. Only `https://formspree.io/f/FORM_ID` is accepted; invalid values fail the build. Rebuild after changing the value. See [launch instructions](docs/LAUNCH.md) for GitHub configuration and actual email verification.
+Copy `.env.example` to `.env` for local public configuration. Never embed an email API key or a Turnstile secret in the static site. The existing `PUBLIC_FORMSPREE_ENDPOINT` is an alternative; uploads require a paid Formspree plan and are delivered as file links. Worker configuration takes precedence when present. Missing configuration shows separate Gmail, email app, phone and copy-email actions. The address remains selectable without JavaScript; clipboard failures select it for manual copying.
 
-Native HTML validation works without JavaScript. Enhanced submission adds localized inline validation, progress, duplicate prevention, a 20-second timeout, provider error handling and retained input on failure. Success means Formspree returned `ok: true`; it is not proof of email receipt. Honeypot protection is included; configure provider spam filtering and allowed domains in Formspree.
+Enhanced submission adds localized validation, progress, duplicate prevention, a 40-second timeout, provider error handling and retained text/files after errors. One PDF, Word document, text file, PNG or JPEG up to 5 MiB is accepted. The Worker independently validates limits and spam verification before sending. Success confirms provider acceptance, not inbox receipt. The Cloudflare form requires JavaScript for Turnstile and provides direct-contact alternatives; the Formspree form supports native submission without JavaScript.
 
 ## Browser verification
 
-`npm run audit` uses installed Chrome by default. It builds a separate ignored fixture with a dummy Formspree URL and intercepts every request to that URL; it never sends an actual inquiry. It checks all routes at 360, 768 and 1440px, automated WCAG scans, keyboard/menu behavior, reduced motion, zoom, no-JavaScript readability, both-language contact states, clipboard success/failure/unavailability, and the shared wordmark.
+`npm run audit` uses installed Chrome by default. It builds ignored fixtures for both providers, intercepts all sends and the spam widget, and never sends an actual inquiry. It checks all routes at 360, 768 and 1440px, automated WCAG scans, keyboard/menu behavior, reduced motion, zoom, no-JavaScript readability, multipart file delivery, validation, retained files/text after errors, both-language contact states, clipboard behavior and the wordmark. Worker tests use mocked Brevo and Turnstile APIs and verify the binary attachment and fixed recipient.
 
 ```sh
 npm run audit

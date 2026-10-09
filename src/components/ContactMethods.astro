@@ -5,10 +5,15 @@ interface Props { lang: Lang; }
 const { lang } = Astro.props;
 const labels = content[lang].contact;
 const emailLink = `mailto:${company.email}?subject=${encodeURIComponent(labels.emailSubject)}`;
+const gmailQuery = new URLSearchParams({ view: 'cm', fs: '1', to: company.email, su: labels.emailSubject });
+const gmailLink = `https://mail.google.com/mail/?${gmailQuery}`;
 ---
 <div class="contact-methods" data-contact-methods>
   <div class="contact-actions">
-    <a class="button" href={emailLink}>{labels.emailCta}</a>
+    <a class="button" href={gmailLink} target="_blank" rel="noopener noreferrer">
+      {labels.gmailCta}<span class="sr-only"> {labels.gmailNewTab}</span>
+    </a>
+    <a class="button button-secondary" href={emailLink}>{labels.emailCta}</a>
     <a class="button button-secondary call-action" href={`tel:${company.phone}`}>
       <span>{labels.phoneCta}</span><span lang="en">{company.phone}</span>
     </a>
