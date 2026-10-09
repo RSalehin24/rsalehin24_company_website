@@ -1,0 +1,30 @@
+---
+import { company, content, pagePath, type Lang } from '../data/site';
+import { formEndpoint } from '../lib/form-config.mjs';
+interface Props { lang: Lang; }
+const { lang } = Astro.props; const c = content[lang]; const f = c.contact;
+const endpoint = formEndpoint(import.meta.env.PUBLIC_FORMSPREE_ENDPOINT || '');
+---
+{endpoint ? <div class="contact-form-panel">
+ <h2>{f.formTitle}</h2><p>{f.formIntro}</p><p class="form-note">{f.required}</p>
+ <form action={endpoint} method="POST" data-contact-form data-progress={f.progress} data-success={f.success} data-error={f.error} data-invalid={f.invalid} data-required-error={f.requiredError} data-email-error={f.emailError} data-long-error={f.tooLongError} data-sending={f.sending} data-submit-label={f.submit}>
+  <div class="form-grid">
+   <div class="form-field"><label for="name">{f.name} <span aria-hidden="true">*</span></label><input id="name" name="name" autocomplete="name" required maxlength="120" aria-describedby="name-error" /><span class="field-error" id="name-error"></span></div>
+   <div class="form-field"><label for="email">{f.email} <span aria-hidden="true">*</span></label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254" aria-describedby="email-error" /><span class="field-error" id="email-error"></span></div>
+   <div class="form-field"><label for="company">{f.company}</label><input id="company" name="company" autocomplete="organization" maxlength="160" aria-describedby="company-error" /><span class="field-error" id="company-error"></span></div>
+   <div class="form-field"><label for="phone">{f.phone}</label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="50" aria-describedby="phone-error" /><span class="field-error" id="phone-error"></span></div>
+  </div>
+  <div class="form-field"><label for="service">{f.service} <span aria-hidden="true">*</span></label><select id="service" name="service" required aria-describedby="service-error"><option value="">{f.servicePlaceholder}</option>{c.serviceItems.map(item => <option value={item.id}>{item.title}</option>)}<option value="other">{f.otherService}</option></select><span class="field-error" id="service-error"></span></div>
+  <div class="form-field"><label for="message">{f.message} <span aria-hidden="true">*</span></label><p class="form-note" id="message-hint">{f.messageHint}</p><textarea id="message" name="message" required rows="6" maxlength="5000" aria-describedby="message-hint message-error"></textarea><span class="field-error" id="message-error"></span></div>
+  <div class="honeypot" aria-hidden="true"><label for="website">Leave this field empty</label><input id="website" name="_gotcha" type="text" tabindex="-1" autocomplete="off" /></div>
+  <input type="hidden" name="_subject" value="RSalehin24 project inquiry" /><input type="hidden" name="language" value={lang} />
+  <p class="form-note privacy-note">{f.privacyBefore} <a href={pagePath(lang,'privacy')}>{f.privacyLink}</a>{f.privacyAfter}</p>
+  <p class="form-feedback" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" data-form-status></p>
+  <button type="submit" class="button">{f.submit}</button>
+  <noscript><p class="form-note">{f.nojs}</p></noscript>
+ </form>
+</div> : <div class="contact-form-panel direct-panel" data-direct-contact>
+ <span class="section-number" aria-hidden="true">01 /</span><h2>{f.unconfiguredTitle}</h2><p>{f.unconfiguredText}</p>
+ <a class="button" href={'mailto:'+company.email}>{f.emailCta}</a><p class="form-note"><a href={pagePath(lang,'privacy')}>{f.privacyLink}</a></p>
+</div>}
+<script src="../scripts/contact.ts"></script>

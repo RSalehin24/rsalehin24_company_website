@@ -1,0 +1,6 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import { content, pagePath } from '../data/site';
+const c = content.en;
+---
+<PageLayout lang="en" page="home" notFound><section class="not-found wrap"><p class="eyebrow">404</p><h1>{c.ui.notfoundTitle}</h1><p>{c.ui.notfoundText}</p><a class="button" href={pagePath('en','home')}>{c.ui.backHome}</a></section></PageLayout>

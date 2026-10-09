@@ -1,0 +1,6 @@
+---
+import { content, pagePath, type Lang } from '../data/site';
+interface Props { lang: Lang; title: string; text: string; }
+const { lang, title, text } = Astro.props;
+---
+<section class="cta-band wrap"><div><p class="eyebrow">{content[lang].ui.contactLabel}</p><h2>{title}</h2><p>{text}</p></div><a class="button" href={pagePath(lang, 'contact')}>{content[lang].ui.discuss}</a></section>

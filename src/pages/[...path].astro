@@ -1,0 +1,11 @@
+---
+import SitePage from '../components/SitePage.astro';
+import { pageKeys, pagePath, type Lang, type PageKey } from '../data/site';
+export function getStaticPaths() {
+ return (['en', 'bn'] as Lang[]).flatMap(lang => pageKeys.map(page => ({
+   params: { path: pagePath(lang, page).replace(/^\/|\/$/g, '') || undefined }, props: { lang, page }
+ })));
+}
+const { lang, page } = Astro.props as { lang: Lang; page: PageKey };
+---
+<SitePage lang={lang} page={page} />

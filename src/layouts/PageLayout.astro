@@ -1,0 +1,68 @@
+---
+import { company, content, pagePath, type Lang, type PageKey } from '../data/site';
+import '@fontsource-variable/manrope';
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/noto-sans-bengali';
+import '../styles/global.css';
+import bengaliFont from '@fontsource-variable/noto-sans-bengali/files/noto-sans-bengali-bengali-wght-normal.woff2?url';
+import headingFont from '@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2?url';
+interface Props { lang: Lang; page: PageKey; notFound?: boolean; }
+const { lang, page, notFound = false } = Astro.props;
+const c = content[lang];
+const [title, description] = notFound ? [c.ui.notfoundMeta, c.ui.notfoundText] : c.meta[page];
+const url = company.domain + (notFound ? (lang === 'bn' ? '/bn/404/' : '/404.html') : pagePath(lang, page));
+const otherLang = lang === 'en' ? 'bn' : 'en';
+const business = {
+ '@context': 'https://schema.org', '@type': 'ProfessionalService', '@id': company.domain + '/#business',
+ name: company.name, url: company.domain, email: company.email, telephone: company.phone,
+ description: c.ui.footerText, areaServed: [{ '@type': 'City', name: 'Dhaka' }, { '@type': 'Country', name: 'Bangladesh' }],
+ address: { '@type': 'PostalAddress', streetAddress: company.address.en.split(', DHAKA')[0], addressLocality: 'Dhaka', postalCode: '1209', addressCountry: 'BD' }
+};
+const services = c.serviceItems.map(service => ({
+ '@context': 'https://schema.org', '@type': 'Service', name: service.title, description: service.description,
+ serviceType: service.title, provider: { '@id': company.domain + '/#business' }, areaServed: { '@type': 'Country', name: 'Bangladesh' },
+ url: company.domain + pagePath(lang, 'services') + '#' + service.id
+}));
+---
+<!doctype html>
+<html lang={lang}>
+ <head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preload" href={lang === 'bn' ? bengaliFont : headingFont} as="font" type="font/woff2" crossorigin="anonymous" /><title>{title}</title><meta name="description" content={description} />
+  <meta name="theme-color" content="#0d1914" /><link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="canonical" href={url} />
+  {notFound ? <meta name="robots" content="noindex, follow" /> : <>
+   <link rel="alternate" hreflang="en" href={company.domain + pagePath('en', page)} />
+   <link rel="alternate" hreflang="bn" href={company.domain + pagePath('bn', page)} />
+   <link rel="alternate" hreflang="x-default" href={company.domain + pagePath('en', page)} />
+  </>}
+  <meta property="og:type" content="website" /><meta property="og:site_name" content={company.name} />
+  <meta property="og:title" content={title} /><meta property="og:description" content={description} /><meta property="og:url" content={url} />
+  <meta property="og:locale" content={lang === 'en' ? 'en_BD' : 'bn_BD'} />
+  <meta property="og:locale:alternate" content={lang === 'en' ? 'bn_BD' : 'en_BD'} />
+  <meta name="twitter:card" content="summary" /><meta name="twitter:title" content={title} /><meta name="twitter:description" content={description} />
+  {!notFound && <script type="application/ld+json" set:html={JSON.stringify(page === 'services' ? [business, ...services] : business).replace(/</g, '\\u003c')} />}
+ </head>
+ <body class:list={[{ 'lang-bn': lang === 'bn' }, 'page-'+page]}>
+  <a class="skip-link" href="#main">{c.ui.skip}</a>
+  <header class="site-header" data-site-header>
+   <div class="header-inner wrap">
+    <a class="wordmark" href={pagePath(lang, 'home')} aria-label="RSalehin24"><span lang="en">R<span class="brand-middle">Salehin</span><span class="brand-number">24</span><span class="brand-dot">.</span></span></a>
+    <nav id="primary-navigation" class="primary-nav" aria-label={c.ui.navLabel}>
+     {(['home','services','products','about','contact'] as PageKey[]).map(key => <a href={pagePath(lang,key)} aria-current={!notFound && page === key ? 'page' : undefined}>{c.nav[key]}</a>)}
+    </nav>
+    <div class="header-tools">
+     <a class="language-link" href={notFound ? (lang === 'en' ? '/bn/404/' : '/404.html') : pagePath(otherLang,page)} lang={otherLang} hreflang={otherLang} aria-label={c.ui.language}>{lang === 'en' ? 'বাংলা' : 'English'}</a>
+     <button class="menu-toggle" hidden aria-controls="primary-navigation" aria-expanded="false" data-open-label={c.ui.menu} data-close-label={c.ui.closeMenu}><span data-menu-label>{c.ui.menu}</span><span class="menu-bars" aria-hidden="true"></span></button>
+    </div>
+   </div>
+  </header>
+  <main id="main" tabindex="-1"><slot /></main>
+  <footer class="site-footer"><div class="footer-top wrap">
+   <div class="footer-brand"><a class="wordmark" href={pagePath(lang,'home')} aria-label="RSalehin24"><span lang="en">R<span class="brand-middle">Salehin</span><span class="brand-number">24</span><span class="brand-dot">.</span></span></a><p>{c.ui.footerText}</p></div>
+   <nav aria-label={lang === 'en' ? 'Footer navigation' : 'ফুটার নেভিগেশন'}>{(['services','products','about','contact','privacy'] as PageKey[]).map(key => <a href={pagePath(lang,key)}>{c.nav[key]}</a>)}</nav>
+   <div class="footer-contact"><p class="eyebrow">{c.ui.footerContact}</p><a href={'mailto:'+company.email}>{company.email}</a><a href={'tel:'+company.phone}>{company.phone}</a><p>{c.ui.footerLocation}</p></div>
+  </div><div class="footer-bottom wrap"><p>© {new Date().getUTCFullYear()} {c.ui.copyright}</p><p>{c.ui.photoCredit}</p></div></footer>
+  <script src="../scripts/navigation.ts"></script>
+ </body>
+</html>

@@ -1,0 +1,64 @@
+# Launch RSalehin24 on GitHub Pages
+
+## Formspree delivery: required before launch
+
+1. Create a Formspree form for `mail@rsalehin24.me` and complete the destination email verification.
+2. Copy the public endpoint in the form `https://formspree.io/f/FORM_ID`. Do not use a private API key.
+3. Configure provider spam filtering and restrict the form to `www.rsalehin24.me` (and the local preview origin while testing, if needed). The site also sends Formspree's `_gotcha` honeypot field. If provider CAPTCHA is enabled, verify its AJAX behavior before release.
+4. For local testing, copy `.env.example` to `.env` and set `PUBLIC_FORMSPREE_ENDPOINT` to the verified endpoint. Rebuild and preview.
+5. On GitHub, open repository Settings → Secrets and variables → Actions → Variables, and create the repository variable `PUBLIC_FORMSPREE_ENDPOINT` with that public endpoint. The workflow passes it to the production build.
+6. Submit one real English inquiry and one real Bangla inquiry from the deployed contact page. Confirm receipt in `mail@rsalehin24.me`, correct reply-to address, full message, optional fields and selected service. A displayed success alone does not verify inbox delivery.
+7. Check one native submission with JavaScript disabled. Formspree will provide its own confirmation page. The JavaScript flow stays on the company site.
+8. If delivery fails, keep the variable empty and rebuild; email and phone remain available. The automated contact tests use mocked responses and do not create an endpoint or verify real mail.
+
+[Formspree form setup and submission documentation](https://help.formspree.io/articles/building-your-form/submit-forms-with-javascript-ajax/).
+
+## Repository and Pages
+
+The prepared workflow is `.github/workflows/deploy.yml`. It uses npm's lockfile, checks types and configuration, builds all pages, validates output, uploads `dist/`, and deploys to the `github-pages` environment. Pull requests run build checks without publishing.
+
+1. Commit the site source and `package-lock.json`, then push to the repository's `main` branch.
+2. Open repository Settings → Pages. Set Source to **GitHub Actions**.
+3. In Pages → Custom domain, enter **www.rsalehin24.me**. The owner adds this domain as selected in the plan.
+4. Run the deployment workflow or push a change to main. Review the build/deploy result in Actions.
+5. Verify the Pages custom-domain check after configuring DNS, and enable **Enforce HTTPS** when the certificate is available.
+
+`public/CNAME` is included with the selected domain, but a custom Actions deployment still requires setting the custom domain in repository Settings. GitHub documents that CNAME files are ignored for custom workflow domain configuration.
+
+Astro is configured with the custom domain and root paths, so no repository `base` is used. Preview locally until the domain is attached; the default repository subpath is not the intended production URL.
+
+[Astro GitHub Pages guide](https://docs.astro.build/en/guides/deploy/github/), [GitHub custom domain guide](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site).
+
+## DNS
+
+At your DNS provider, configure the following records. Preserve unrelated mail, verification and product-subdomain records.
+
+| Name | Type | Value |
+| --- | --- | --- |
+| www | CNAME | rsalehin24.github.io |
+| @ | A | 185.199.108.153 |
+| @ | A | 185.199.109.153 |
+| @ | A | 185.199.110.153 |
+| @ | A | 185.199.111.153 |
+
+The `www` CNAME points to the account's GitHub Pages domain without the repository name. With both apex and www records set, and www chosen in Pages, GitHub redirects the apex to www. Do not point www to the apex. Check the official guide above for current DNS values and optional IPv6 records. These values were checked on 2026-10-09.
+
+Verify `https://www.rsalehin24.me/` and `https://rsalehin24.me/`, the apex redirect, HTTPS certificate and every English/Bangla route. Check a nonexistent path returns a 404 status and a helpful page. GitHub Pages serves the global English 404; it links to a full Bangla 404 page.
+
+## Search visibility
+
+1. Verify the domain in Google Search Console using the supplied DNS TXT record.
+2. Submit `https://www.rsalehin24.me/sitemap.xml`.
+3. Inspect the Home, Services and Bangla Home URLs. Confirm their canonical URLs and crawl availability.
+4. Check service structured data and hreflang relationships after deployment. Each of the twelve content pages has its own title, description and canonical, reciprocal en/bn links, and English x-default.
+5. Run PageSpeed Insights against the deployed domain; local Lighthouse scores are lab results and can change with hosting/network conditions.
+
+Technical readiness and useful Dhaka/Bangladesh content do not guarantee search rankings. [Google localized page guidance](https://developers.google.com/search/docs/specialty/international/localized-versions), [Search Console sitemap instructions](https://support.google.com/webmasters/answer/7451001).
+
+## Final launch checks
+
+- Recheck `https://ereader.rsalehin24.me` and the public product states.
+- Confirm actual Formspree email receipt in both languages.
+- Confirm public pages contain no repository links or development instructions.
+- Confirm all text and images load, the menu and language switch work, and mobile/desktop layouts remain usable.
+- Confirm privacy text still matches hosting, fields and providers. No analytics are included in the initial release.

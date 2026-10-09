@@ -1,0 +1,13 @@
+---
+import { company, content, type Lang } from '../data/site';
+interface Props { lang: Lang; index: number; detailed?: boolean; }
+const { lang, index, detailed = false } = Astro.props;
+const c = content[lang]; const p = c.productItems[index];
+const Heading = detailed ? 'h2' : 'h3';
+---
+<article class:list={['product-card', p.stage, { 'product-detail': detailed }]} id={p.id}>
+ <div class="product-topline"><span class="product-index" aria-hidden="true">0{index + 1}</span><span class:list={['status', p.stage]}>{p.stage === 'live' && <span class="status-dot" aria-hidden="true"></span>}{p.status}</span></div>
+ <p class="eyebrow">{p.category}</p><Heading class="product-title">{p.name}</Heading><p class="product-description">{p.description}</p>
+ {detailed && <><h3 class="product-feature-heading">{p.stage === 'inception' ? c.ui.planned : c.ui.features}</h3><ul class="feature-list">{p.features.map(feature => <li>{feature}</li>)}</ul><p class="product-note">{p.note}</p></>}
+ {p.stage === 'live' && <a class="text-link" href={company.readerUrl}>{c.ui.readerLink}</a>}
+</article>
