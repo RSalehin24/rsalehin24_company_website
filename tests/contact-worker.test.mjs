@@ -85,6 +85,19 @@ test('uses the registered sender ID and rejects an invalid ID before contacting 
  }
 });
 
+test('keeps inquiries addressed to the company inbox when using a separate website sender', async () => {
+ for (const senderId of [undefined,'10']) {
+  const mock = deliveryMock();
+  const senderEnv = {...env, BREVO_SENDER_EMAIL:'website@rsalehin24.me', BREVO_SENDER_ID:senderId};
+  const response = await handleContact(requestFor(inquiryForm()), senderEnv, mock.fetchRequest);
+  assert.equal(response.status,200);
+  const payload = JSON.parse(mock.calls[1].request.body);
+  assert.deepEqual(payload.to,[{email:'mail@rsalehin24.me',name:'RSalehin24'}]);
+  assert.deepEqual(payload.replyTo,{email:'client@example.com',name:'A Client'});
+  assert.deepEqual(payload.sender, senderId ? {id:10} : {email:'website@rsalehin24.me',name:'RSalehin24 website'});
+ }
+});
+
 test('delivers Excel directly and packages Markdown, SVG and DCX with their original names and bytes', async () => {
  for (const name of ['brief.xlsx', 'notes.md', 'image.svg', 'image.dcx', 'brief.docs']) {
   const form = inquiryForm();

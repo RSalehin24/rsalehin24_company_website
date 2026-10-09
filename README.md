@@ -41,7 +41,7 @@ EPUB Reader is linked only to `company.readerUrl`, verified against its domain f
 
 ## Contact delivery
 
-The form takes a reply email, subject, message and optional attachment, alongside the existing project fields. Cloudflare + Brevo sends real attachments to `mail@rsalehin24.me`. The Worker, private secrets, Turnstile widget and public GitHub variables are configured. See [email setup](docs/CONTACT.md) for the current deployment, future Worker updates and inbox verification. No new website DNS records are required.
+The form takes a reply email, subject, message and optional attachment, alongside the existing project fields. Cloudflare + Brevo sends from verified `website@rsalehin24.me` to `mail@rsalehin24.me`, with real attachments and the visitor's email as Reply-To. Incoming mail to the new address forwards to the existing inbox. The Worker, private secrets, Turnstile widget and public GitHub variables are configured. See [email setup](docs/CONTACT.md) for the current deployment, future Worker updates and inbox verification. No new website DNS records are required.
 
 Copy `.env.example` to `.env` for local public configuration. Never embed an email API key or a Turnstile secret in the static site. The existing `PUBLIC_FORMSPREE_ENDPOINT` is an alternative; uploads require a paid Formspree plan and are delivered as file links. Worker configuration takes precedence when present. Missing configuration shows separate Gmail, email app, phone and copy-email actions. The address remains selectable without JavaScript; clipboard failures select it for manual copying.
 
