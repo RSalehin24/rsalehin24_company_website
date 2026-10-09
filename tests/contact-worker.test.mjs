@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { handleContact } from '../worker/contact.mjs';
 import { attachmentLimit, attachmentError } from '../src/lib/contact-rules.mjs';
 import { requestLimit } from '../worker/validation.mjs';
+import { createAttachmentArchive } from '../worker/attachment-archive.mjs';
 
 const env = { BREVO_API_KEY: 'test-api-key', TURNSTILE_SECRET_KEY: 'test-secret-key', BREVO_SENDER_EMAIL: 'mail@rsalehin24.me' };
 const origin = 'https://www.rsalehin24.me';
@@ -65,6 +66,20 @@ test('supports no attachment and both website origins', async () => {
   assert.equal(response.status,200);
   assert.equal(response.headers.get('Access-Control-Allow-Origin'),address);
   assert.ok(!('attachment' in JSON.parse(mock.calls[1].request.body)));
+ }
+});
+
+test('delivers Excel directly and packages Markdown, SVG and DCX with their original names and bytes', async () => {
+ for (const name of ['brief.xlsx', 'notes.md', 'image.svg', 'image.dcx', 'brief.docs']) {
+  const form = inquiryForm();
+  form.append('attachment',new File([binary],name));
+  const mock = deliveryMock();
+  const response = await handleContact(requestFor(form),env,mock.fetchRequest);
+  assert.equal(response.status,200);
+  const attachment = JSON.parse(mock.calls[1].request.body).attachment[0];
+  const expected = name.endsWith('.xlsx') ? binary : createAttachmentArchive(name,binary);
+  assert.equal(attachment.name,name.endsWith('.xlsx') ? name : name+'.zip');
+  assert.deepEqual(Buffer.from(attachment.content,'base64'),Buffer.from(expected));
  }
 });
 

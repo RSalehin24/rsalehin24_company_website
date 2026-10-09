@@ -236,6 +236,17 @@ try{
   await page.locator('#name').fill('Test Inquiry');await page.locator('#email').fill('test@example.com');await page.locator('#subject').fill('Second subject');await page.locator('#message').fill('Second inquiry');await page.locator('#service').selectOption('websites');
   await page.locator('[name="_gotcha"]').evaluate(e=>e.value='spam');const spamCalls=calls;await submit.click();await expect(status).toHaveAttribute('data-state','error');assert.equal(calls,spamCalls);
   await page.locator('[name="_gotcha"]').evaluate(e=>e.value='');
+  for(const extension of ['xlsx','md','docs','dcx','svg','webp','heic','avif']) {
+   const name='brief.'+extension;const beforeUpload=calls;mode='provider';
+   await attachment.setInputFiles({name,mimeType:'application/octet-stream',buffer:fileBytes});
+   await submit.click();await expect(status).toHaveAttribute('data-state','error');
+   assert.equal(calls,beforeUpload+1,'supported attachment reaches '+provider+': '+name);
+   assert.ok(lastSubmission.includes(Buffer.from('filename="'+name+'"')));assert.ok(lastSubmission.includes(fileBytes));
+   await expect(attachment).not.toHaveAttribute('aria-invalid','true');
+   assert.equal(await attachment.evaluate(input=>input.files[0].name),name);
+  }
+  if(provider==='brevo')await expect(page.locator('#attachment-hint')).toContainText('ZIP');
+  else await expect(page.locator('#attachment-hint')).not.toContainText('ZIP');
   await page.setViewportSize({width:1280,height:900});await page.evaluate(()=>document.documentElement.style.zoom='2');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'form 200% zoom '+provider+' '+language);await page.evaluate(()=>document.documentElement.style.zoom='1');
   for(const width of [320,360,768,1440]) {
@@ -275,7 +286,7 @@ try{
  assert.equal(await timeoutPage.locator('#attachment').evaluate(input=>input.files[0].name),'brief.txt');
  await expect(timeoutPage.locator('button[type="submit"]')).toBeEnabled();
  await timedRequest.abort();await timeoutPage.close();
- results.push('Both languages and providers: subject/body/attachment multipart delivery, attachment type/empty/size validation, spam verification and expiry, blocked verification script, missing endpoint, preserved text and files after errors, provider/network/rate/invalid-response errors, 40-second timeout, duplicate prevention, success reset and honeypot passed; no real submission sent');
+ results.push('Both languages and providers: subject/body/attachment multipart delivery, Excel/Markdown/DOCS/DCX/SVG/WebP/HEIC/AVIF acceptance, attachment type/empty/size validation, spam verification and expiry, blocked verification script, missing endpoint, preserved text and files after errors, provider/network/rate/invalid-response errors, 40-second timeout, duplicate prevention, success reset and honeypot passed; no real submission sent');
  assert.deepEqual(errors,[]);results.push('No browser JavaScript errors');
  results.push('Both languages: Gmail compose links and popup navigation (intercepted), mail-app and call actions, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have lowercase n, a small raised trademark, no dot and full-size numerals. The English service dropdown capitalizes Not sure yet.');
  await writeFile(join(artifacts,'browser-results.json'),JSON.stringify({date:new Date().toISOString(),checks,results},null,2));

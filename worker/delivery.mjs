@@ -1,11 +1,11 @@
 import { ContactError } from './validation.mjs';
+import { encodeAttachment } from './attachments.mjs';
 
 export const recipient = 'mail@rsalehin24.me';
 const turnstileURL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const brevoURL = 'https://api.brevo.com/v3/smtp/email';
 const verificationTimeout = 10_000;
 const deliveryTimeout = 20_000;
-const encodingChunkSize = 16_384;
 
 export async function verifyChallenge(context, fetchRequest) {
   const token = context.form.get('cf-turnstile-response');
@@ -19,15 +19,6 @@ export async function verifyChallenge(context, fetchRequest) {
   if (!response.ok || result.success !== true || result.hostname !== hostname || result.action !== 'contact') {
     throw new ContactError('challenge', 422);
   }
-}
-
-async function encodeAttachment(file) {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let binary = '';
-  for (let start = 0; start < bytes.length; start += encodingChunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(start, start + encodingChunkSize));
-  }
-  return { name: file.name, content: btoa(binary) };
 }
 
 function emailText(inquiry) {

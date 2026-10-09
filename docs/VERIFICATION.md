@@ -6,7 +6,7 @@ Verified on 2026-10-09 against the Astro production output. The GitHub Actions w
 
 - Astro production build: 12 localized content routes, English/Bangla 404 pages and sitemap generated.
 - Astro check: zero errors, warnings or hints.
-- Node tests: 13 passed, covering provider configuration, fixed-recipient email delivery, exact binary attachment encoding, validation, upload/request limits, spam verification, origin/method checks and provider failures/timeouts.
+- Node tests: 17 passed, covering provider configuration, fixed-recipient email delivery, expanded attachment formats, exact binary attachment encoding, independent ZIP-format fixtures, validation, upload/request limits, spam verification, origin/method checks and provider failures/timeouts.
 - Static verification passed for default, Formspree and Cloudflare/Brevo output: unique localized titles and descriptions, self-canonicals, reciprocal en/bn and x-default links, Open Graph metadata, business/service structured data, sitemap, robots, CNAME, links, responsive images and 404 noindex.
 - Public HTML contains no repository links, localhost references or developer setup instructions. Company contact details match the supplied reference.
 
@@ -29,6 +29,8 @@ Tested both languages using separate production fixtures for Cloudflare/Brevo an
 - Missing endpoint: direct email/phone options, with no form or unavailable submit button.
 - Required fields, whitespace-only name, invalid email, missing subject and localized inline errors.
 - Multipart submission includes the subject, message, filename and exact binary attachment bytes.
+- Requested document/Excel/Markdown extensions and common image formats are accepted case-insensitively. Both localized browser forms accept XLSX, MD, DOCS, DCX, SVG, WebP, HEIC and AVIF; the server independently accepts all documented formats. The misspelled Excel extension `.xlxs` is rejected.
+- Brevo-unsupported formats are packaged in a single-file ZIP with their original names and exact contents. ZIP output matches an independent Python `zipfile` fixture including a Bengali filename and binary bytes. Direct attachments remain unchanged. The localized upload hint explains ZIP delivery only for the Brevo provider.
 - Unsupported, empty and oversized files are blocked before submission. Server tests independently enforce file type, one-file and size rules.
 - Service preselection from inquiry links.
 - Network failure, provider validation errors, rate limits, malformed JSON and unconfirmed responses: subject/message and selected file retained, retry enabled.
@@ -55,7 +57,9 @@ The Cloudflare Worker, Managed Turnstile widget, private Brevo/Turnstile secret 
 - After deployment, both production contact pages deferred Turnstile until form interaction, then loaded its real iframe, passed mobile WCAG scans with no horizontal overflow, and produced no page JavaScript errors. The visible human-verification checkbox was inspected.
 - The owner approved two complete form tests with TXT attachments. The English test stopped at human verification: Turnstile rejected the automated browser, so no token or form POST was produced. Neither the English nor Bangla test was sent. Complete both submissions in a normal browser.
 - Turnstile now loads on form focus or near the check. Regression checks confirm deferred loading, one script shared by focus/scroll triggers, token reset and the blocked-script error path. Reserved widget space prevents a layout jump.
-- The owner's later website inquiry reached Brevo but bounced with `DMARC checks failed`. Cloudflare's receiving log recorded SPF pass, DKIM neutral and DMARC fail. Both DKIM DNS records matched Brevo's authenticated-domain configuration. The domain was reauthenticated through Brevo's API; both subsequent English/Bangla attachment tests passed SPF, DKIM and DMARC and showed delivered in Cloudflare's receiving log. The tests called the existing delivery module directly, so mailbox receipt and a new website submission still need confirmation. The domain's reject policy was preserved.
+- The owner's website inquiries reached Brevo but bounced with `DMARC checks failed`. Cloudflare's receiving log recorded SPF pass, DKIM neutral and DMARC fail. Both DKIM DNS records matched Brevo's authenticated-domain configuration. Reauthentication did not immediately resolve the next website inquiry. Direct English/Bangla tests passed SPF, DKIM and DMARC and showed delivered in Cloudflare's receiving log; the owner confirmed their receipt.
+- A subsequent private diagnostic sent a real TXT attachment through the existing delivery module inside the actual Cloudflare Worker and was reported delivered by Brevo. Its API key matched the successful direct tests. A real Markdown-in-ZIP test was also reported delivered. Temporary diagnostic code and bindings were removed and version previews disabled. A fresh human-completed website submission still needs confirmation; the precise cause of the earlier authentication failures was not established. The domain's reject policy was preserved.
+- The updated production Worker accepts MD, DOC, DOCS, DOCX, DCX, SVG, XLSX, PNG, WebP, HEIC and AVIF fixtures through file validation, then rejects each for the deliberately missing spam token without sending email. The temporary diagnostic route returns 404; only the Brevo key, sender and Turnstile secret bindings remain. Python independently opens the generated ZIP and verifies its Bengali filename, original contents and CRC.
 
 Complete human verification and submission from both localized forms. Provider receipt and mocked browser tests alone cannot prove the complete browser-to-Worker delivery path.
 

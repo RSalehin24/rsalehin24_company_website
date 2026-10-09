@@ -1,6 +1,17 @@
 # Enable the email form
 
-The English and Bangla contact pages include name, reply email, optional company/phone, service interest, subject, message and one optional attachment. Allowed files are PDF, DOC, DOCX, TXT, PNG and JPEG, up to 5 MiB (labelled 5 MB). The recommended delivery path is GitHub Pages → Cloudflare Worker → Brevo → `mail@rsalehin24.me`. Files arrive as actual email attachments. The website stays hosted on GitHub Pages.
+The English and Bangla contact pages include name, reply email, optional company/phone, service interest, subject, message and one optional attachment, up to 5 MiB (labelled 5 MB). The recommended delivery path is GitHub Pages → Cloudflare Worker → Brevo → `mail@rsalehin24.me`. Files arrive as actual email attachments. The website stays hosted on GitHub Pages.
+
+| File category | Accepted extensions |
+| --- | --- |
+| Documents | `.pdf`, `.doc`, `.docs`, `.docx` |
+| Excel spreadsheets | `.xls`, `.xlsx` |
+| Text | `.txt`, `.md` |
+| Images | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.svg`, `.avif`, `.heic`, `.heif`, `.tif`, `.tiff`, `.bmp`, `.ico`, `.dcx`, `.jp2`, `.jxl`, `.psd`, `.exr` |
+
+Extensions are case-insensitive. Excel's extension is `.xlsx`; the misspelling `.xlxs` is rejected. The same shared rules validate file type, filename and size in the browser and Worker. The form accepts these files without rendering uploaded images or documents.
+
+Brevo rejects some original extensions (a live `.md` test returned `Unsupported file format: md`). The Worker places DOCS, Markdown, SVG, DCX, WebP, AVIF, HEIC, HEIF, ICO, JP2, JXL, PSD and EXR files in a standard stored ZIP attachment named `original-name.ext.zip`. Unzipping restores the exact original filename and binary contents. PDF, DOC, DOCX, XLS, XLSX, TXT, JPEG, PNG, GIF, TIFF and BMP remain direct attachments. A localized notice explains ZIP delivery before submission. Formspree continues to upload the original file and provide its download link.
 
 Until a provider is configured, the public site shows direct contact options. A local preview or successful automated test cannot confirm inbox delivery.
 
@@ -15,7 +26,9 @@ Configured on 2026-10-09:
 
 A provider verification email with English/Bangla text and a real TXT attachment was accepted by Brevo, and its delivery log reports `delivered`. The owner confirmed mailbox receipt and correct attachment contents. Complete the real form checks below; this provider test alone does not verify the complete browser submission path.
 
-The automated live form tests stopped at the English human check: Turnstile rejected the automated browser and did not issue a token. The owner's later website submission reached Brevo but Cloudflare Email Routing rejected it for failed DMARC, with DKIM recorded as neutral. DNS records matched Brevo's authenticated domain. After refreshing domain authentication through Brevo's API, both new English/Bangla attachment tests passed SPF, DKIM and DMARC and showed delivered in Cloudflare's log. These two tests exercised the delivery module directly; confirm mailbox receipt and retry the website form using the steps below.
+The automated live form tests stopped at the English human check: Turnstile rejected the automated browser and did not issue a token. The owner's website submissions reached Brevo but Cloudflare Email Routing rejected them for failed DMARC, with DKIM recorded as neutral. DNS records matched Brevo's authenticated domain. Refreshing domain authentication did not immediately resolve the next website submission, although direct English/Bangla tests passed authentication and the owner confirmed receipt.
+
+A subsequent private diagnostic invoked the existing delivery module inside the actual Cloudflare Worker, confirmed its API key matched the successful direct tests, and was reported delivered by Brevo. A real Markdown-in-ZIP attachment test was also reported delivered. Temporary diagnostic code and bindings were removed, and version previews remain disabled. These checks do not establish why the earlier messages failed authentication; verify a fresh human-completed website submission in both languages before declaring the full delivery path confirmed. The domain's DMARC reject policy remains enabled.
 
 The Worker was uploaded through the Cloudflare API. GitHub Pages deployments update the website; redeploy the Worker separately after changes to `worker/` or `src/lib/contact-rules.mjs`, or connect Cloudflare Git builds as described below. Local credentials are kept in ignored `worker/.dev.vars.setup`; never commit or paste them into chat.
 
