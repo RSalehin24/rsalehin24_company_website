@@ -12,7 +12,7 @@ const contactLabels = localizedContent.contact;
   <h2>{contactLabels.formTitle}</h2>
   <p>{contactLabels.formIntro}</p>
   <p class="form-note">{contactLabels.required}</p>
-  <form action={delivery.endpoint} method="POST" enctype="multipart/form-data" data-contact-form data-provider={delivery.provider} data-progress={contactLabels.progress} data-success={contactLabels.success} data-reference-label={contactLabels.referenceLabel} data-error={contactLabels.error} data-invalid={contactLabels.invalid} data-required-error={contactLabels.requiredError} data-email-error={contactLabels.emailError} data-long-error={contactLabels.tooLongError} data-file-size-error={contactLabels.fileSizeError} data-file-type-error={contactLabels.fileTypeError} data-file-empty-error={contactLabels.fileEmptyError} data-challenge-error={contactLabels.challengeError} data-rate-error={contactLabels.rateError} data-sending={contactLabels.sending} data-submit-label={contactLabels.submit}>
+  <form action={delivery.endpoint} method="POST" enctype="multipart/form-data" data-contact-form data-provider={delivery.provider} data-progress={contactLabels.progress} data-success={contactLabels.success} data-reference-label={contactLabels.referenceLabel} data-error={contactLabels.error} data-invalid={contactLabels.invalid} data-required-error={contactLabels.requiredError} data-email-error={contactLabels.emailError} data-long-error={contactLabels.tooLongError} data-file-size-error={contactLabels.fileSizeError} data-file-type-error={contactLabels.fileTypeError} data-file-empty-error={contactLabels.fileEmptyError} data-email-size-error={contactLabels.emailSizeError} data-challenge-error={contactLabels.challengeError} data-rate-error={contactLabels.rateError} data-sending={contactLabels.sending} data-submit-label={contactLabels.submit}>
     <div class="form-grid">
       <div class="form-field">
         <label for="name">{contactLabels.name} <span aria-hidden="true">*</span>
@@ -60,7 +60,7 @@ const contactLabels = localizedContent.contact;
     <div class="form-field">
       <label for="attachment">{contactLabels.attachment}</label>
       <p class="form-note" id="attachment-hint">{contactLabels.attachmentHint}{delivery.provider === 'brevo' && <> {contactLabels.attachmentArchiveHint}</>}</p>
-      <input id="attachment" name="attachment" type="file" accept={attachmentAccept} aria-describedby="attachment-hint attachment-error" />
+      <input id="attachment" name="attachment" type="file" multiple accept={attachmentAccept} aria-describedby="attachment-hint attachment-error" />
       <span class="field-error" id="attachment-error"></span>
       {delivery.provider === 'formspree' && <p class="form-note">{contactLabels.attachmentLinks}</p>}
     </div>

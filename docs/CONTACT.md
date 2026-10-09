@@ -1,6 +1,10 @@
 # Enable the email form
 
-The English and Bangla contact pages include name, reply email, optional company/phone, service interest, subject, message and one optional attachment, up to 5 MiB (labelled 5 MB). The recommended delivery path is GitHub Pages → Cloudflare Worker → Brevo → `mail@rsalehin24.me`. Files arrive as actual email attachments. The website stays hosted on GitHub Pages.
+The English and Bangla contact pages include name, reply email, optional company/phone, service interest, subject, message and optional attachments, with a 20 MiB combined selection limit (labelled 20 MB) and no fixed file-count limit. The recommended delivery path is GitHub Pages → Cloudflare Worker → Brevo → `mail@rsalehin24.me`. The website stays hosted on GitHub Pages.
+
+## Pending large-file delivery decision
+
+Multiple-file selection, combined-size validation and safe filename numbering are enabled. [Brevo limits the complete email to 20 MB](https://help.brevo.com/hc/en-us/articles/4402811730962-Add-an-attachment-to-a-transactional-email), including attachments and message content. Base64 encoding expands files by roughly one third, so a full 20 MiB selection cannot reliably fit in that message limit. Before encoding or contacting Brevo, the Worker estimates the encoded size with allowances for ZIP containers, MIME line breaks, headers and message bodies. Oversized deliveries return `emailSize` with a localized explanation and retain the draft and all selected files. Send fewer files at a time or use direct contact. Private, expiring download links remain an option requiring the owner's delivery choice; no upload storage or download-link service has been added.
 
 | File category | Accepted extensions |
 | --- | --- |
@@ -11,7 +15,9 @@ The English and Bangla contact pages include name, reply email, optional company
 
 Extensions are case-insensitive. Excel's extension is `.xlsx`; the misspelling `.xlxs` is rejected. The same shared rules validate file type, filename and size in the browser and Worker. The form accepts these files without rendering uploaded images or documents.
 
-Brevo rejects some original extensions (a live `.md` test returned `Unsupported file format: md`). The Worker places DOCS, Markdown, SVG, DCX, WebP, AVIF, HEIC, HEIF, ICO, JP2, JXL, PSD and EXR files in a standard stored ZIP attachment named `original-name.ext.zip`. Files with non-ASCII names, including Bengali names and the narrow no-break space used in macOS screenshot names, arrive as `attachment.zip` regardless of extension. A controlled PNG test with that special space failed DKIM/DMARC while the same image with an ASCII name passed. Keeping the outer attachment name in ASCII avoids this delivery failure. Unzipping restores the exact original filename and binary contents. PDF, DOC, DOCX, XLS, XLSX, TXT, JPEG, PNG, GIF, TIFF and BMP with ASCII names remain direct attachments. A localized notice explains ZIP delivery before submission. Formspree continues to upload the original file and provide its download link.
+The Worker keeps filenames containing only ASCII letters, digits, spaces, dots, underscores and hyphens. Other characters, including Bengali letters, punctuation and the narrow no-break space used in macOS screenshot names, trigger a replacement name by type: `pic_01.png`, `pdf_01.pdf`, `doc_01.docx`, `excel_01.xlsx` or `text_01.txt`, retaining the actual extension. This prevents the authentication failure reproduced with a Unicode screenshot filename. Numbering starts at `01` for each category in each inquiry and grows to `02`, `03` and beyond. Original safe names are reserved first to prevent collisions; duplicate names also receive a unique replacement. No global file counter is kept. Filename path separators, control characters and excessive length remain invalid. Renaming changes neither the file contents nor the visitor's local files.
+
+Brevo rejects some original extensions (a live `.md` test returned `Unsupported file format: md`). The Worker places DOCS, Markdown, SVG, DCX, WebP, AVIF, HEIC, HEIF, ICO, JP2, JXL, PSD and EXR files in a standard stored ZIP attachment named `delivery-name.ext.zip`. Its entry uses the same safe delivery filename; unzipping restores the exact binary contents. Other supported formats, including PNG, PDF, Word, Excel and TXT, remain direct attachments even when renamed. For example, `বাংলা.png` becomes `pic_01.png`, while `বাংলা.md` becomes `text_01.md` inside `text_01.md.zip`. A localized notice explains renaming and ZIP delivery before submission. Formspree continues to upload the original file and provide its download link.
 
 Until a provider is configured, the public site shows direct contact options. A local preview or successful automated test cannot confirm inbox delivery.
 
@@ -38,7 +44,7 @@ The Worker was uploaded through the Cloudflare API. GitHub Pages deployments upd
 
 In your existing Brevo account, confirm that transactional email sending is enabled and that `mail@rsalehin24.me` is a verified sender. The existing Brevo DNS records help authenticate your domain, but they do not create an API key or confirm that transactional sending is enabled. Create an API key in Brevo's SMTP & API settings. Keep it for the Worker secret below; do not put it in GitHub variables, website code or a chat message.
 
-The Worker fixes the recipient to `mail@rsalehin24.me`, uses your verified sender in the From header, and sets Reply-To to the visitor's email. It sends a plain text and escaped HTML version of the message, project details and the optional base64-encoded attachment. The visitor cannot choose another recipient.
+The Worker fixes the recipient to `mail@rsalehin24.me`, uses your verified sender in the From header, and sets Reply-To to the visitor's email. It sends a plain text and escaped HTML version of the message, project details and optional base64-encoded attachments. The visitor cannot choose another recipient.
 
 [Brevo transactional email API](https://developers.brevo.com/reference/send-transac-email).
 
@@ -104,9 +110,9 @@ Repeat from the Bangla page, including Bengali subject/body text. The success me
 
 If an accepted message bounces with `DMARC checks failed`, compare Brevo's transactional event with Cloudflare Email Routing's authentication results. Check both DKIM records against the domain configuration in Brevo, and refresh [domain authentication](https://developers.brevo.com/docs/domain-authentication-and-verification) when appropriate. Confirm DKIM/DMARC pass on a subsequent test. A domain showing authenticated in the dashboard alone does not prove that an individual email passed authentication.
 
-For an attachment-related bounce, also check that the deployed Worker includes the current attachment rules. Unicode filenames must be preserved inside an ASCII-named ZIP, including otherwise supported formats such as PNG. Do not weaken the domain's DMARC policy to accept these messages.
+For an attachment-related bounce, also check that the deployed Worker includes the current attachment rules. Filenames with restricted characters must be replaced with a safe name before sending or archiving. Supported formats such as PNG must remain direct attachments after renaming. Do not weaken the domain's DMARC policy to accept these messages.
 
-The frontend preserves text and the selected file on errors, prevents duplicate clicks, and resets only after confirmed acceptance. It has a 40-second timeout. The Worker limits total request size, validates fields/files, checks a honeypot, verifies Turnstile, and does not store submissions in a database or log their contents. It stores only dated daily counters in a Durable Object. It does not retry an uncertain send automatically. With JavaScript disabled or a blocked verification service, visitors can use the visible direct email and phone links.
+The frontend preserves text and all selected files on errors, prevents duplicate clicks, and resets only after confirmed acceptance. It has a 40-second timeout. The Worker validates every file and their combined size, with a separate 1 MiB allowance for multipart metadata in the bounded request. It checks a honeypot and verifies Turnstile, and does not store submissions in a database or log their contents. It stores only dated daily counters in a Durable Object. It does not retry an uncertain send automatically. With JavaScript disabled or a blocked verification service, visitors can use the visible direct email and phone links.
 
 ## Inquiry references and inbox organization
 
@@ -120,6 +126,6 @@ To separate website inquiries and subsequent replies in Gmail, [create a filter]
 
 The existing Formspree integration remains available. Create and verify a form delivering to `mail@rsalehin24.me`, with file uploads enabled. File uploads require a paid Personal, Professional or Business plan; notification emails contain download links rather than actual attached files. Enable provider storage, configure spam protection and restrict allowed domains. Configure `PUBLIC_FORMSPREE_ENDPOINT` using the public `https://formspree.io/f/FORM_ID` URL, leave both Worker variables empty, and rebuild. The privacy notice and file help adapt to this provider.
 
-Test actual receipt, subject, reply address, message and file download links in both languages. Also test native submission with JavaScript disabled. Formspree enforces its own upload limits; the enhanced frontend applies the site's 5 MiB limit, while native submissions use the provider's limits. A free Formspree form cannot satisfy the attachment requirement.
+Test actual receipt, subject, reply address, message and file download links in both languages. Also test native submission with JavaScript disabled. Formspree enforces its own upload limits; the updated enhanced frontend applies the site's combined 20 MiB limit, while native submissions use the provider's limits. A free Formspree form cannot satisfy the attachment requirement.
 
 [Formspree file uploads](https://help.formspree.io/articles/building-your-form/file-uploads/), [plans and file delivery](https://formspree.io/plans/).

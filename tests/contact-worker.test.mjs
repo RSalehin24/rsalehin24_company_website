@@ -120,7 +120,7 @@ test('delivers Excel directly and packages Markdown, SVG and DCX with their orig
  }
 });
 
-test('packages a large PNG with a macOS Unicode filename without exposing that name in MIME headers', async () => {
+test('renames a large PNG with a macOS Unicode filename and delivers it directly', async () => {
  const name = 'Screenshot 2026-10-09 at 10.41.57\u202fPM.png';
  const content = new Uint8Array(1_139_016).fill(128);
  const form = inquiryForm();
@@ -129,8 +129,22 @@ test('packages a large PNG with a macOS Unicode filename without exposing that n
  const response = await handleContact(requestFor(form),env,mock.fetchRequest);
  assert.deepEqual(await response.json(),{ok:true,reference});
  const attachment = JSON.parse(mock.calls[1].request.body).attachment[0];
- assert.equal(attachment.name,'attachment.zip');
- assert.deepEqual(Buffer.from(attachment.content,'base64'),Buffer.from(createAttachmentArchive(name,content)));
+ assert.equal(attachment.name,'pic_01.png');
+ assert.deepEqual(Buffer.from(attachment.content,'base64'),Buffer.from(content));
+});
+
+test('renames PDF, documents, spreadsheets and text after multipart parsing, preserving bytes', async () => {
+ for (const [name,filename] of [['প্রস্তাবনা.pdf','pdf_01.pdf'],['প্রস্তাবনা.docx','doc_01.docx'],['হিসাব.xlsx','excel_01.xlsx'],['নোট.txt','text_01.txt'],['নোট.md','text_01.md.zip']]) {
+  const form = inquiryForm();
+  form.append('attachment',new File([binary],name));
+  const mock = deliveryMock();
+  const response = await handleContact(requestFor(form),env,mock.fetchRequest);
+  assert.equal(response.status,200);
+  const attachment = JSON.parse(mock.calls[1].request.body).attachment[0];
+  assert.equal(attachment.name,filename);
+  const expected = filename.endsWith('.zip') ? createAttachmentArchive('text_01.md',binary) : binary;
+  assert.deepEqual(Buffer.from(attachment.content,'base64'),Buffer.from(expected));
+ }
 });
 
 test('rejects missing, duplicate, invalid and oversized fields before contacting providers', async () => {
@@ -146,7 +160,7 @@ test('rejects missing, duplicate, invalid and oversized fields before contacting
  }
 });
 
-test('enforces attachment types, size and one file on the server', async () => {
+test('enforces every attachment type, empty-file and combined-size rule on the server', async () => {
  const cases = [new File(['bad'],'program.exe'),new File([],'empty.pdf'),new File(['bad'],'../brief.pdf'),new File([new Uint8Array(attachmentLimit+1)],'large.pdf')];
  for(const file of cases) {
   const form = inquiryForm(); form.append('attachment',file);
@@ -158,10 +172,69 @@ test('enforces attachment types, size and one file on the server', async () => {
  }
  const form = inquiryForm();
  form.append('attachment',new File(['one'],'one.pdf'));
- form.append('attachment',new File(['two'],'two.pdf'));
+ form.append('attachment','not a file');
  assert.equal((await handleContact(requestFor(form),env,deliveryMock().fetchRequest)).status,422);
  assert.equal(attachmentError({name:'brief.PDF',size:attachmentLimit}),null);
  assert.equal(attachmentError(undefined),null);
+});
+
+test('delivers multiple files with per-category numbering and one inquiry reference', async () => {
+ const form = inquiryForm();
+ for(const name of ['ছবি.png','দ্বিতীয়.jpg','প্রস্তাব.pdf','নোট.txt','নোট.md'])form.append('attachment',new File([binary],name));
+ const mock = deliveryMock();
+ const response = await handleContact(requestFor(form),env,mock.fetchRequest);
+ assert.deepEqual(await response.json(),{ok:true,reference});
+ assert.equal(mock.calls.length,2);
+ const payload = JSON.parse(mock.calls[1].request.body);
+ assert.deepEqual(payload.attachment.map(file=>file.name),['pic_01.png','pic_02.jpg','pdf_01.pdf','text_01.txt','text_02.md.zip']);
+ assert.deepEqual(Buffer.from(payload.attachment[0].content,'base64'),Buffer.from(binary));
+ assert.deepEqual(Buffer.from(payload.attachment[4].content,'base64'),Buffer.from(createAttachmentArchive('text_02.md',binary)));
+});
+
+test('checks the complete selection before contacting providers and accepts the exact combined limit', async () => {
+ const content = new Uint8Array(attachmentLimit/2);
+ const form = inquiryForm({'cf-turnstile-response':null});
+ form.append('attachment',new File([content],'first.pdf'));
+ form.append('attachment',new File([content],'second.png'));
+ const mock = deliveryMock();
+ const response = await handleContact(requestFor(form),env,mock.fetchRequest);
+ assert.equal(response.status,422);
+ assert.equal((await response.json()).code,'challenge');
+ assert.equal(mock.calls.length,0);
+ form.append('attachment',new File(['x'],'extra.txt'));
+ const oversized = await handleContact(requestFor(form),env,mock.fetchRequest);
+ assert.equal(oversized.status,422);
+ assert.equal((await oversized.json()).code,'fileSizeError');
+ assert.equal(mock.calls.length,0);
+});
+
+test('has no fixed attachment-count limit and rejects an invalid later file before sending', async () => {
+ const form = inquiryForm();
+ for(let index=0;index<100;index++)form.append('attachment',new File(['note'],`note_${index}.txt`));
+ const mock = deliveryMock();
+ const response = await handleContact(requestFor(form),env,mock.fetchRequest);
+ assert.equal(response.status,200);
+ assert.equal(JSON.parse(mock.calls[1].request.body).attachment.length,100);
+ form.append('attachment',new File(['invalid'],'program.exe'));
+ const rejected = deliveryMock();
+ const failure = await handleContact(requestFor(form),env,rejected.fetchRequest);
+ assert.equal(failure.status,422);
+ assert.deepEqual((await failure.json()).errors,[{field:'attachment'}]);
+ assert.equal(rejected.calls.length,0);
+});
+
+test('rejects email-encoding overflow before sending while allowing selections that fit', async () => {
+ for(const [size,expectedStatus] of [[13*1024*1024,200],[15*1024*1024,422]]) {
+  const form = inquiryForm();
+  form.append('attachment',new File([new Uint8Array(size)],'large.png'));
+  const mock = deliveryMock();
+  const response = await handleContact(requestFor(form),env,mock.fetchRequest);
+  assert.equal(response.status,expectedStatus);
+  const result = await response.json();
+  if(expectedStatus===200)assert.deepEqual(result,{ok:true,reference});
+  else assert.deepEqual(result,{ok:false,code:'emailSize',errors:[{field:'attachment'}]});
+  assert.equal(mock.calls.length,expectedStatus===200?2:1);
+ }
 });
 
 test('checks spam tokens, their hostname and action before sending mail', async () => {

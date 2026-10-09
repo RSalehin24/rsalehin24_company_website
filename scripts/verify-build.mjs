@@ -42,6 +42,7 @@ for (const route of routes) {
    else {assert.equal(form['data-provider'],'formspree');assert.match(form.action,/^https:\/\/formspree\.io\/f\/[a-zA-Z0-9]+$/);}
    assert.ok(!html.includes('data-direct-contact'));
    for(const name of ['email','subject','attachment'])assert.ok(tags(html,'input').some(input=>input.name===name));
+   assert.match(html, /<input\b(?=[^>]*\bname="attachment")(?=[^>]*\bmultiple(?:\s|=|\/?>))[^>]*>/);
    assert.ok(tags(html,'textarea').some(input=>input.name==='message'));
   }
   else {assert.ok(html.includes('data-direct-contact'));assert.ok(!html.includes('<form '));assert.ok(html.includes('data-copy-email'));assert.ok(html.includes('data-email-address'));}

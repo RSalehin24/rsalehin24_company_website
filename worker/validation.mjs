@@ -1,6 +1,7 @@
-import { attachmentError, attachmentLimit } from '../src/lib/contact-rules.mjs';
+import { attachmentsError, attachmentLimit } from '../src/lib/contact-rules.mjs';
 
-export const requestLimit = attachmentLimit + 128 * 1024;
+const multipartOverheadLimit = 1024 * 1024;
+export const requestLimit = attachmentLimit + multipartOverheadLimit;
 const fieldRules = {
   name: { required: true, max: 120 }, email: { required: true, max: 254 },
   subject: { required: true, max: 160 }, message: { required: true, max: 5000 },
@@ -33,14 +34,12 @@ function readText(form, name) {
   return value;
 }
 
-function readAttachment(form) {
+function readAttachments(form) {
   const files = form.getAll('attachment');
-  if (files.length > 1 || (files.length && !(files[0] instanceof File))) throw new ContactError('invalid', 422, 'attachment');
-  const file = files[0];
-  if (!file || (!file.name && file.size === 0)) return null;
-  const error = attachmentError(file);
+  if (files.some(file => !(file instanceof File))) throw new ContactError('invalid', 422, 'attachment');
+  const error = attachmentsError(files);
   if (error) throw new ContactError(error, 422, 'attachment');
-  return file;
+  return files.filter(file => file.name || file.size);
 }
 
 export function readInquiry(form) {
@@ -48,7 +47,7 @@ export function readInquiry(form) {
   const inquiry = Object.fromEntries(Object.keys(fieldRules).map(name => [name, readText(form, name)]));
   if (!isEmail(inquiry.email)) throw new ContactError('invalid', 422, 'email');
   if (!services.has(inquiry.service)) throw new ContactError('invalid', 422, 'service');
-  return { ...inquiry, attachment: readAttachment(form) };
+  return { ...inquiry, attachments: readAttachments(form) };
 }
 
 async function readLimitedBody(request) {

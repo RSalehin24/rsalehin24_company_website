@@ -205,6 +205,7 @@ try{
    if(mode==='malformed')return routed.fulfill({status:200,headers,body:'invalid'});
    if(mode==='unconfirmed')return routed.fulfill({status:200,headers,body:'{"ok":false}'});
    if(mode==='challenge')return routed.fulfill({status:422,headers,body:'{"ok":false,"code":"challenge"}'});
+   if(mode==='emailSize')return routed.fulfill({status:422,headers,body:'{"ok":false,"code":"emailSize","errors":[{"field":"attachment"}]}'});
    const result=provider==='brevo'?{ok:true,reference:'RS24-10Aug2026-0003'}:{ok:true};
    return routed.fulfill({status:200,headers,body:JSON.stringify(result)});
   });
@@ -215,22 +216,33 @@ try{
   await submit.click();await expect(page.locator('#subject')).toBeFocused();assert.equal(calls,0);
   await page.locator('#subject').fill('A project with an attachment');
   const attachment=page.locator('#attachment');
-  for(const file of [{name:'unsafe.exe',mimeType:'application/octet-stream',buffer:Buffer.from('test')},{name:'empty.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(0)},{name:'large.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(5*1024*1024+1)}]) {
-   await attachment.setInputFiles(file);await submit.click();await expect(attachment).toHaveAttribute('aria-invalid','true');await expect(attachment).toBeFocused();assert.equal(calls,0);
-  }
+  assert.equal(await attachment.evaluate(input=>input.multiple),true);
   const fileBytes=Buffer.from([0,1,127,128,254,255]);
-  await attachment.setInputFiles({name:'brief.pdf',mimeType:'application/pdf',buffer:fileBytes});
+  const selectedFiles=[{name:'brief.pdf',mimeType:'application/pdf',buffer:fileBytes},{name:'notes.txt',mimeType:'text/plain',buffer:Buffer.from('second attachment')}];
+  const invalidSelections=[
+   [{name:'unsafe.exe',mimeType:'application/octet-stream',buffer:Buffer.from('test')}],
+   [{name:'empty.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(0)}],
+   [{name:'large.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(20*1024*1024+1)}],
+   [selectedFiles[0],{name:'unsafe.exe',mimeType:'application/octet-stream',buffer:Buffer.from('test')}],
+   [{name:'part1.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(10*1024*1024)},{name:'part2.png',mimeType:'image/png',buffer:Buffer.alloc(10*1024*1024+1)}],
+  ];
+  for(const files of invalidSelections) {
+   await attachment.setInputFiles(files);await submit.click();await expect(attachment).toHaveAttribute('aria-invalid','true');await expect(attachment).toBeFocused();assert.equal(calls,0);
+  }
+  await attachment.setInputFiles(selectedFiles);
   if(provider==='brevo') {
    await page.locator('[name="cf-turnstile-response"]').evaluate(field=>field.value='');
    await submit.click();await expect(status).toHaveText(await form.getAttribute('data-challenge-error'));assert.equal(calls,0);
    await page.evaluate(()=>window.turnstile.reset('audit-widget'));
   }
-  for(mode of ['network','provider','rate','malformed','unconfirmed']){
-   await submit.click();await expect(status).toHaveAttribute('data-state','error');await expect(page.locator('#message')).toHaveValue('A useful project brief.');await expect(page.locator('#subject')).toHaveValue('A project with an attachment');assert.equal(await attachment.evaluate(input=>input.files[0].name),'brief.pdf');await expect(submit).toBeEnabled();
+  for(mode of ['network','provider','rate','malformed','unconfirmed','emailSize']){
+   await submit.click();await expect(status).toHaveAttribute('data-state','error');await expect(page.locator('#message')).toHaveValue('A useful project brief.');await expect(page.locator('#subject')).toHaveValue('A project with an attachment');assert.deepEqual(await attachment.evaluate(input=>Array.from(input.files,file=>file.name)),['brief.pdf','notes.txt']);await expect(submit).toBeEnabled();
    if(mode==='rate')await expect(status).toHaveText(await form.getAttribute('data-rate-error'));
+   if(mode==='emailSize')await expect(status).toHaveText(await form.getAttribute('data-email-size-error'));
   }
   if(provider==='brevo'){mode='challenge';await submit.click();await expect(status).toHaveText(await form.getAttribute('data-challenge-error'));}
   assert.ok(lastSubmission.includes(Buffer.from('name="subject"')));assert.ok(lastSubmission.includes(Buffer.from('A project with an attachment')));assert.ok(lastSubmission.includes(Buffer.from('filename="brief.pdf"')));assert.ok(lastSubmission.includes(fileBytes));
+  assert.ok(lastSubmission.includes(Buffer.from('filename="notes.txt"')));assert.ok(lastSubmission.includes(Buffer.from('second attachment')));
   mode='slow';const before=calls;await submit.click();await expect(submit).toBeDisabled();await expect(form).toHaveAttribute('aria-busy','true');await expect(status).toHaveAttribute('data-state','pending');
   await form.evaluate(f=>{f.requestSubmit();f.requestSubmit();});assert.equal(calls,before+1);release();
   await expect(status).toHaveAttribute('data-state','success');await expect(page.locator('#message')).toHaveValue('');await expect(page.locator('#subject')).toHaveValue('');assert.equal(await attachment.evaluate(input=>input.files.length),0);await expect(submit).toBeEnabled();
@@ -241,6 +253,17 @@ try{
   await page.locator('#name').fill('Test Inquiry');await page.locator('#email').fill('test@example.com');await page.locator('#subject').fill('Second subject');await page.locator('#message').fill('Second inquiry');await page.locator('#service').selectOption('websites');
   await page.locator('[name="_gotcha"]').evaluate(e=>e.value='spam');const spamCalls=calls;await submit.click();await expect(status).toHaveAttribute('data-state','error');assert.equal(calls,spamCalls);
   await page.locator('[name="_gotcha"]').evaluate(e=>e.value='');
+  const bulkSelections=[
+   [{name:'part1.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(10*1024*1024)},{name:'part2.png',mimeType:'image/png',buffer:Buffer.alloc(10*1024*1024)}],
+   Array.from({length:100},(_,index)=>({name:'note_'+index+'.txt',mimeType:'text/plain',buffer:Buffer.from('note')})),
+  ];
+  for(const files of bulkSelections){
+   const beforeUpload=calls;mode='provider';
+   await attachment.setInputFiles(files);await submit.click();await expect(status).toHaveAttribute('data-state','error');
+   assert.equal(calls,beforeUpload+1,'combined-limit boundary and many-file selections reach '+provider);
+   assert.equal(await attachment.evaluate(input=>input.files.length),files.length);
+   await expect(attachment).not.toHaveAttribute('aria-invalid','true');
+  }
   for(const extension of ['xlsx','md','docs','dcx','svg','webp','heic','avif']) {
    const name='brief.'+extension;const beforeUpload=calls;mode='provider';
    await attachment.setInputFiles({name,mimeType:'application/octet-stream',buffer:fileBytes});
@@ -283,15 +306,15 @@ try{
  await timeoutPage.goto(fixture.url+'/contact/');
  for(const [name,value] of Object.entries({name:'Timeout test',email:'test@example.com',subject:'Keep my draft',message:'Keep this message'}))await timeoutPage.locator('#'+name).fill(value);
  await timeoutPage.locator('#service').selectOption('websites');
- await timeoutPage.locator('#attachment').setInputFiles({name:'brief.txt',mimeType:'text/plain',buffer:Buffer.from('keep this file')});
+ await timeoutPage.locator('#attachment').setInputFiles([{name:'brief.txt',mimeType:'text/plain',buffer:Buffer.from('keep this file')},{name:'notes.md',mimeType:'text/markdown',buffer:Buffer.from('keep this too')}]);
  await timeoutPage.locator('button[type="submit"]').click();await expect(timeoutPage.locator('form')).toHaveAttribute('aria-busy','true');
  await expect.poll(()=>timeoutCalls).toBe(1);await timeoutPage.clock.fastForward(41_000);
  await expect(timeoutPage.locator('[data-form-status]')).toHaveAttribute('data-state','error');
  await expect(timeoutPage.locator('#subject')).toHaveValue('Keep my draft');await expect(timeoutPage.locator('#message')).toHaveValue('Keep this message');
- assert.equal(await timeoutPage.locator('#attachment').evaluate(input=>input.files[0].name),'brief.txt');
+ assert.deepEqual(await timeoutPage.locator('#attachment').evaluate(input=>Array.from(input.files,file=>file.name)),['brief.txt','notes.md']);
  await expect(timeoutPage.locator('button[type="submit"]')).toBeEnabled();
  await timedRequest.abort();await timeoutPage.close();
- results.push('Both languages and providers: subject/body/attachment multipart delivery, Excel/Markdown/DOCS/DCX/SVG/WebP/HEIC/AVIF acceptance, attachment type/empty/size validation, spam verification and expiry, blocked verification script, missing endpoint, preserved text and files after errors, provider/network/rate/invalid-response errors, 40-second timeout, duplicate prevention, success reset and honeypot passed; no real submission sent');
+ results.push('Both languages and providers: multiple-attachment multipart delivery, exact 20 MiB combined boundary, over-limit rejection, 100-file selections, Excel/Markdown/DOCS/DCX/SVG/WebP/HEIC/AVIF acceptance, every selected file validated and retained after errors/timeouts, spam verification and expiry, blocked verification script, missing endpoint, provider/network/rate/invalid-response errors, duplicate prevention, success reset and honeypot passed; no real submission sent');
  assert.deepEqual(errors,[]);results.push('No browser JavaScript errors');
  results.push('Both languages: Gmail compose links and popup navigation (intercepted), mail-app and call actions, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have lowercase n, a small raised trademark, no dot and full-size numerals. The English service dropdown capitalizes Not sure yet.');
  await writeFile(join(artifacts,'browser-results.json'),JSON.stringify({date:new Date().toISOString(),checks,results},null,2));

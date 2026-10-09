@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { attachmentAccept, attachmentError, attachmentLimit, attachmentRequiresArchive } from '../src/lib/contact-rules.mjs';
+import { attachmentAccept, attachmentError, attachmentsError, attachmentLimit, attachmentRequiresArchive, attachmentSafeName, attachmentSafeNames } from '../src/lib/contact-rules.mjs';
 import { createAttachmentArchive } from '../worker/attachment-archive.mjs';
-import { encodeAttachment } from '../worker/attachments.mjs';
+import { encodeAttachment, encodeAttachments } from '../worker/attachments.mjs';
 
 test('accepts requested documents, spreadsheets, Markdown and image formats regardless of case', () => {
   const requested = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docs', 'docx', 'dcx', 'xls', 'xlsx', 'txt', 'md', 'svg', 'gif', 'webp', 'avif', 'heic', 'heif', 'tif', 'tiff', 'bmp', 'ico', 'jp2', 'jxl', 'psd', 'exr'];
@@ -24,7 +24,7 @@ test('ZIP bytes match an independent Python zipfile fixture, preserving a Bengal
   assert.deepEqual(Buffer.from(createAttachmentArchive('বাংলা.md', content)), Buffer.from(fixture, 'base64'));
 });
 
-test('uses ZIP for provider-unsupported formats and Unicode names, preserving the original bytes', async () => {
+test('uses ZIP only for provider-unsupported formats, with safe filenames and original bytes', async () => {
   const content = Uint8Array.from([0, 255, 10, 13, 128, 129]);
   for (const name of ['brief.pdf', 'brief.xlsx', 'image.JPG', 'image.tiff', 'notes.txt', 'latest screentshot.png']) {
     assert.equal(attachmentRequiresArchive(name), false);
@@ -33,7 +33,7 @@ test('uses ZIP for provider-unsupported formats and Unicode names, preserving th
     assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(content));
   }
   const archivedNames = [
-    ['বাংলা.md', 'attachment.zip'], ['বাংলা.png', 'attachment.zip'],
+    ['বাংলা.md', 'text_01.md.zip'],
     ['image.SVG', 'image.SVG.zip'], ['image.dcx', 'image.dcx.zip'],
     ['image.heic', 'image.heic.zip'], ['brief.docs', 'brief.docs.zip'],
   ];
@@ -41,16 +41,72 @@ test('uses ZIP for provider-unsupported formats and Unicode names, preserving th
     assert.equal(attachmentRequiresArchive(name), true);
     const encoded = await encodeAttachment(new File([content], name));
     assert.equal(encoded.name, deliveryName);
-    assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(createAttachmentArchive(name, content)));
+    assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(createAttachmentArchive(attachmentSafeName(name), content)));
   }
 });
 
-test('delivers a macOS screenshot filename inside an ASCII-named ZIP matching an independent fixture', async () => {
+test('renames a macOS screenshot and delivers it directly with unchanged binary contents', async () => {
   const name = 'Screenshot 2026-10-09 at 10.41.57\u202fPM.png';
   const content = Uint8Array.from([0, 255, 10, 13, 128, 129]);
-  // Python zipfile fixture uses the exact original Unicode filename and binary contents.
-  const fixture = 'UEsDBBQAAAgAAAAAIQDlPv+9BgAAAAYAAAAqAAAAU2NyZWVuc2hvdCAyMDI2LTEwLTA5IGF0IDEwLjQxLjU34oCvUE0ucG5nAP8KDYCBUEsBAhQAFAAACAAAAAAhAOU+/70GAAAABgAAACoAAAAAAAAAAAAgAAAAAAAAAFNjcmVlbnNob3QgMjAyNi0xMC0wOSBhdCAxMC40MS41N+KAr1BNLnBuZ1BLBQYAAAAAAQABAFgAAABOAAAAAAA=';
   const encoded = await encodeAttachment(new File([content], name));
-  assert.equal(encoded.name, 'attachment.zip');
-  assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(fixture, 'base64'));
+  assert.equal(encoded.name, 'pic_01.png');
+  assert.equal(attachmentRequiresArchive(name), false);
+  assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(content));
+});
+
+test('renames restricted characters by file category for every accepted extension', async () => {
+  const categories = [
+    ['pdf', ['pdf']], ['doc', ['doc', 'docs', 'docx']],
+    ['excel', ['xls', 'xlsx']], ['text', ['txt', 'md']],
+    ['pic', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif', 'heic', 'heif', 'tif', 'tiff', 'bmp', 'ico', 'dcx', 'jp2', 'jxl', 'psd', 'exr']],
+  ];
+  const content = Uint8Array.from([0, 255, 10, 13, 128, 129]);
+  for (const [prefix, extensions] of categories) {
+    for (const extension of extensions) {
+      const filename = `${prefix}_01.${extension}`;
+      const encoded = await encodeAttachment(new File([content], `বাংলা ":?<>|*.${extension.toUpperCase()}`));
+      const archived = attachmentRequiresArchive(filename);
+      assert.equal(encoded.name, archived ? `${filename}.zip` : filename);
+      const expected = archived ? createAttachmentArchive(filename, content) : content;
+      assert.deepEqual(Buffer.from(encoded.content, 'base64'), Buffer.from(expected));
+    }
+  }
+});
+
+test('renames ASCII punctuation and hidden spaces while keeping safe names and per-message numbering stable', () => {
+  for (const filename of ['photo:01.png', 'photo?.png', 'photo".png', 'photo;01.png', 'photo\u202f01.png']) {
+    assert.equal(attachmentSafeName(filename), 'pic_01.png');
+  }
+  assert.equal(attachmentSafeName('first বাংলা.png'), 'pic_01.png');
+  assert.equal(attachmentSafeName('second বাংলা.png'), 'pic_01.png');
+  assert.equal(attachmentSafeName('latest screentshot.png'), 'latest screentshot.png');
+  assert.equal(attachmentSafeName('brief-final_01.PDF'), 'brief-final_01.PDF');
+});
+
+test('enforces a combined 20 MiB limit without imposing a file-count limit', () => {
+  assert.equal(attachmentLimit, 20 * 1024 * 1024);
+  assert.equal(attachmentsError([]), null);
+  assert.equal(attachmentsError([{ name: 'a.pdf', size: attachmentLimit / 2 }, { name: 'b.png', size: attachmentLimit / 2 }]), null);
+  assert.equal(attachmentsError([{ name: 'a.pdf', size: attachmentLimit }, { name: 'b.png', size: 1 }]), 'fileSizeError');
+  assert.equal(attachmentsError(Array.from({ length: 1000 }, (_, index) => ({ name: `${index}.txt`, size: 1 }))), null);
+  assert.equal(attachmentsError([{ name: 'a.pdf', size: 1 }, { name: 'invalid.exe', size: 1 }]), 'fileTypeError');
+  assert.equal(attachmentsError([{ name: 'a.pdf', size: 1 }, { name: 'empty.png', size: 0 }]), 'fileEmptyError');
+});
+
+test('numbers renamed files by category, preserving safe names and avoiding collisions within an inquiry', () => {
+  const names = ['বাংলা.PNG', 'ছবি.jpg', 'প্রস্তাব.pdf', 'নোট.txt', 'নোট.md', 'pic_01.png', 'brief.pdf', 'BRIEF.PDF'];
+  const files = names.map(name => ({ name }));
+  const expected = ['pic_02.png', 'pic_03.jpg', 'pdf_01.pdf', 'text_01.txt', 'text_02.md', 'pic_01.png', 'brief.pdf', 'pdf_02.pdf'];
+  assert.deepEqual(attachmentSafeNames(files), expected);
+  assert.deepEqual(attachmentSafeNames(files), expected);
+});
+
+test('encodes multiple attachments with unique type-based names and unchanged contents', async () => {
+  const contents = [Uint8Array.from([0, 255]), Uint8Array.from([128, 254]), new TextEncoder().encode('বাংলা নোট')];
+  const files = ['ছবি.png', 'আরেকটি.png', 'নোট.md'].map((name, index) => new File([contents[index]], name));
+  const encoded = await encodeAttachments(files);
+  assert.deepEqual(encoded.map(file => file.name), ['pic_01.png', 'pic_02.png', 'text_01.md.zip']);
+  assert.deepEqual(Buffer.from(encoded[0].content, 'base64'), Buffer.from(contents[0]));
+  assert.deepEqual(Buffer.from(encoded[1].content, 'base64'), Buffer.from(contents[1]));
+  assert.deepEqual(Buffer.from(encoded[2].content, 'base64'), Buffer.from(createAttachmentArchive('text_01.md', contents[2])));
 });

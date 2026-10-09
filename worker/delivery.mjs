@@ -1,11 +1,27 @@
 import { ContactError, isEmail } from './validation.mjs';
-import { encodeAttachment } from './attachments.mjs';
+import { encodeAttachments } from './attachments.mjs';
+import { attachmentRequiresArchive } from '../src/lib/contact-rules.mjs';
 
 export const recipient = 'mail@rsalehin24.me';
 const turnstileURL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const brevoURL = 'https://api.brevo.com/v3/smtp/email';
 const verificationTimeout = 10_000;
 const deliveryTimeout = 20_000;
+const emailSizeLimit = 20_000_000;
+const mimeLineLength = 76;
+const attachmentHeaderAllowance = 1024;
+const archiveContainerAllowance = 512;
+// Reserve room for both bounded message bodies, headers and MIME boundaries.
+const messageEnvelopeAllowance = 256 * 1024;
+
+function checkEmailSize(inquiry) {
+  const size = inquiry.attachments.reduce((total, file) => {
+    const containerSize = attachmentRequiresArchive(file.name) ? archiveContainerAllowance : 0;
+    const encodedSize = Math.ceil((file.size + containerSize) / 3) * 4;
+    return total + encodedSize + Math.ceil(encodedSize / mimeLineLength) * 2 + attachmentHeaderAllowance;
+  }, messageEnvelopeAllowance);
+  if (size > emailSizeLimit) throw new ContactError('emailSize', 422, 'attachment');
+}
 
 export function emailSender(env) {
   if (!isEmail(env.BREVO_SENDER_EMAIL)) throw new ContactError('unconfigured', 503);
@@ -46,11 +62,12 @@ async function emailPayload(inquiry, sender) {
     subject: `[${inquiry.reference}] : ${inquiry.subject}`, textContent: text,
     htmlContent: `<html><body><pre style="white-space:pre-wrap;font-family:sans-serif">${escapeHTML(text)}</pre></body></html>`,
   };
-  if (inquiry.attachment) payload.attachment = [await encodeAttachment(inquiry.attachment)];
+  if (inquiry.attachments.length) payload.attachment = await encodeAttachments(inquiry.attachments);
   return payload;
 }
 
 export async function deliverInquiry(context, fetchRequest) {
+  checkEmailSize(context.inquiry);
   const payload = await emailPayload(context.inquiry, emailSender(context.env));
   const response = await fetchRequest(brevoURL, {
     method: 'POST', headers: { 'api-key': context.env.BREVO_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },

@@ -111,8 +111,8 @@ class ContactFormController {
     const result = await postInquiry(this.form);
     if (!result.accepted) {
       this.showProviderErrors(result.errors);
-      const message = result.status === 429 ? this.form.dataset.rateError :
-        result.code === 'challenge' ? this.form.dataset.challengeError : this.form.dataset.error;
+      const errorMessages = new Map([['challenge', this.form.dataset.challengeError], ['emailSize', this.form.dataset.emailSizeError]]);
+      const message = result.status === 429 ? this.form.dataset.rateError : errorMessages.get(String(result.code)) || this.form.dataset.error;
       this.showFeedback(message || '', 'error');
       this.feedback.focus();
       return;

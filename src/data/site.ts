@@ -247,7 +247,7 @@ export const content = {
       "phoneLabel": "Phone",
       "addressLabel": "Address",
       "formTitle": "Send us an email",
-      "formIntro": "Write to mail@rsalehin24.me directly from this form. You can attach a document or image.",
+      "formIntro": "Write to mail@rsalehin24.me directly from this form. You can attach documents and images.",
       "unconfiguredTitle": "Let’s start by email or phone.",
       "unconfiguredText": "Send a little about your business, the service you’re interested in, and what you’d like to achieve.",
       "emailCta": "Open your email app",
@@ -270,20 +270,21 @@ export const content = {
       "subject": "Subject",
       "message": "Message",
       "messageHint": "What do you want to build or improve? Please avoid sharing passwords or sensitive financial information.",
-      "attachment": "Attachment (optional)",
-      "attachmentHint": "One document, Excel spreadsheet, text/Markdown file or image. Maximum 5 MB.",
-      "attachmentArchiveHint": "Some file types or filenames arrive inside a ZIP attachment, preserving the original filename and contents.",
-      "attachmentLinks": "Your file will be shared with us as a download link.",
-      "fileSizeError": "Choose a file no larger than 5 MB.",
-      "fileTypeError": "Choose a supported document, Excel, text/Markdown or image file with a simple filename.",
-      "fileEmptyError": "This file is empty. Please choose another file.",
+      "attachment": "Attachments (optional)",
+      "attachmentHint": "Select documents, Excel spreadsheets, text/Markdown files or images. Maximum 20 MB combined, with no file-count limit.",
+      "attachmentArchiveHint": "Filenames with special characters are simplified, for example pic_01.png, pic_02.jpg or pdf_01.pdf. Some file types arrive inside a ZIP attachment. File contents are unchanged. Large selections may need to be sent in smaller groups.",
+      "attachmentLinks": "Your files will be shared with us as download links.",
+      "fileSizeError": "Choose files totalling no more than 20 MB.",
+      "fileTypeError": "Choose only supported documents, Excel, text/Markdown or image files with valid filenames.",
+      "fileEmptyError": "One of the selected files is empty. Please remove it or choose another file.",
+      "emailSizeError": "These files are too large to send in one email. Please select fewer files at a time, or contact us by email or phone. Your message and files are still here.",
       "challengeLabel": "Spam protection",
       "challengeError": "Please complete the spam check. If it cannot load, contact us by email or phone.",
-      "rateError": "Too many attempts. Please wait a moment and try again. Your message and attachment are still here.",
+      "rateError": "Too many attempts. Please wait a moment and try again. Your message and attachments are still here.",
       "submit": "Send email",
       "privacyBefore": "We use your details to respond to your inquiry.",
-      "brevoNotice": "Cloudflare and Brevo process the message and attachment. Read our",
-      "formspreeNotice": "Formspree processes the message and file. Read our",
+      "brevoNotice": "Cloudflare and Brevo process the message and attachments. Read our",
+      "formspreeNotice": "Formspree processes the message and files. Read our",
       "privacyLink": "privacy notice",
       "privacyAfter": ".",
       "nojs": "This form also works without JavaScript. Formspree will show its confirmation page after submission.",
@@ -295,7 +296,7 @@ export const content = {
       "progress": "Sending your inquiry…",
       "success": "Your inquiry was accepted. Thank you for getting in touch.",
       "referenceLabel": "Inquiry reference",
-      "error": "We could not confirm your email was sent. Your message and attachment are still here. Please try again, or contact us by email or phone.",
+      "error": "We could not confirm your email was sent. Your message and attachments are still here. Please try again, or contact us by email or phone.",
       "sending": "Sending…"
     },
     "privacy": {
@@ -305,7 +306,7 @@ export const content = {
       "sections": [
         {
           "heading": "Information you share",
-          "text": "When the contact form is available, it asks for your name, reply email, service interest, email subject and message. Company, phone and one attachment are optional. We receive the filename and contents of a file you choose to submit. If you email or call directly, we receive the information you choose to share through that channel."
+          "text": "When the contact form is available, it asks for your name, reply email, service interest, email subject and message. Company, phone and attachments are optional. We receive the filenames and contents of files you choose to submit. If you email or call directly, we receive the information you choose to share through that channel."
         },
         {
           "heading": "Why we use it",
@@ -325,8 +326,8 @@ export const content = {
         }
       ],
       "processingHeading": "How the form is processed",
-      "brevoProcessing": "When enabled with Cloudflare and Brevo, the form sends your message and optional attachment through a Cloudflare Worker to Brevo, which sends an email to mail@rsalehin24.me. Cloudflare stores a daily count to generate your dated inquiry reference; it does not save your name, email, message or attachment in that counter. Brevo and our email provider may retain message data under their own policies. Cloudflare Turnstile processes technical information, such as IP addresses and browser information, to prevent spam. Message text and file contents are sent only when you submit the form.",
-      "formspreeProcessing": "When enabled with Formspree, the form sends your message and optional file to Formspree. It forwards the message and a file download link to our email and stores submissions and files under its account settings. Its service may process technical information, such as IP addresses, for delivery and spam prevention. Message text and file contents are sent only when you submit the form.",
+      "brevoProcessing": "When enabled with Cloudflare and Brevo, the form sends your message and optional attachments through a Cloudflare Worker to Brevo, which sends an email to mail@rsalehin24.me. Cloudflare stores a daily count to generate your dated inquiry reference; it does not save your name, email, message or attachments in that counter. Brevo and our email provider may retain message data under their own policies. Cloudflare Turnstile processes technical information, such as IP addresses and browser information, to prevent spam. Message text and file contents are sent only when you submit the form.",
+      "formspreeProcessing": "When enabled with Formspree, the form sends your message and optional files to Formspree. It forwards the message and file download links to our email and stores submissions and files under its account settings. Its service may process technical information, such as IP addresses, for delivery and spam prevention. Message text and file contents are sent only when you submit the form.",
       "providerLabel": "Formspree privacy policy",
       "brevoLabel": "Brevo privacy policy",
       "cloudflareLabel": "Cloudflare privacy policy",
@@ -567,7 +568,7 @@ export const content = {
       "phoneLabel": "ফোন",
       "addressLabel": "ঠিকানা",
       "formTitle": "আমাদের ইমেইল পাঠান",
-      "formIntro": "এই ফর্ম থেকেই mail@rsalehin24.me-এ লিখুন। চাইলে একটি নথি বা ছবি সংযুক্ত করতে পারেন।",
+      "formIntro": "এই ফর্ম থেকেই mail@rsalehin24.me-এ লিখুন। চাইলে একাধিক নথি বা ছবি সংযুক্ত করতে পারেন।",
       "unconfiguredTitle": "ইমেইল বা ফোনে কথা শুরু করি।",
       "unconfiguredText": "আপনার ব্যবসা, যে সেবায় আগ্রহী এবং কী অর্জন করতে চান তা সংক্ষেপে জানান।",
       "emailCta": "আপনার ইমেইল অ্যাপ খুলুন",
@@ -591,12 +592,13 @@ export const content = {
       "message": "বার্তা",
       "messageHint": "কী তৈরি করতে বা উন্নত করতে চান? পাসওয়ার্ড বা সংবেদনশীল আর্থিক তথ্য দেবেন না।",
       "attachment": "সংযুক্তি (ঐচ্ছিক)",
-      "attachmentHint": "একটি নথি, Excel স্প্রেডশিট, টেক্সট/Markdown ফাইল বা ছবি। সর্বোচ্চ ৫ MB।",
-      "attachmentArchiveHint": "কিছু ফাইলের ধরন বা নামের কারণে ফাইল ZIP সংযুক্তিতে পৌঁছায়। ফাইলের মূল নাম ও বিষয়বস্তু অক্ষত থাকে।",
-      "attachmentLinks": "আপনার ফাইলটি ডাউনলোড লিংক হিসেবে আমাদের কাছে পৌঁছাবে।",
-      "fileSizeError": "৫ MB বা তার কম আকারের ফাইল বেছে নিন।",
-      "fileTypeError": "সহজ নামের সমর্থিত নথি, Excel, টেক্সট/Markdown ফাইল বা ছবি বেছে নিন।",
-      "fileEmptyError": "এই ফাইলটি খালি। অন্য একটি ফাইল বেছে নিন।",
+      "attachmentHint": "নথি, Excel স্প্রেডশিট, টেক্সট/Markdown ফাইল বা ছবি বেছে নিন। সব ফাইল মিলিয়ে সর্বোচ্চ ২০ MB; ফাইলের সংখ্যায় সীমা নেই।",
+      "attachmentArchiveHint": "বিশেষ অক্ষরযুক্ত ফাইলের নাম সহজ করা হয়, যেমন pic_01.png, pic_02.jpg বা pdf_01.pdf। কিছু ধরনের ফাইল ZIP সংযুক্তিতে পৌঁছায়। ফাইলের বিষয়বস্তু অক্ষত থাকে। বড় আকারের ফাইলগুলো কয়েকটি ছোট দলে পাঠানোর প্রয়োজন হতে পারে।",
+      "attachmentLinks": "আপনার ফাইলগুলো ডাউনলোড লিংক হিসেবে আমাদের কাছে পৌঁছাবে।",
+      "fileSizeError": "সব ফাইলের মোট আকার ২০ MB বা তার কম রাখুন।",
+      "fileTypeError": "সঠিক নামের সমর্থিত নথি, Excel, টেক্সট/Markdown ফাইল বা ছবি বেছে নিন।",
+      "fileEmptyError": "বেছে নেওয়া ফাইলগুলোর একটি খালি। সেটি সরিয়ে দিন বা অন্য ফাইল বেছে নিন।",
+      "emailSizeError": "এই ফাইলগুলো এক ইমেইলে পাঠানোর জন্য বেশি বড়। একবারে কম ফাইল বেছে নিন অথবা ইমেইল বা ফোনে যোগাযোগ করুন। আপনার বার্তা ও ফাইলগুলো এখানেই আছে।",
       "challengeLabel": "স্প্যাম প্রতিরোধ",
       "challengeError": "স্প্যাম যাচাই সম্পন্ন করুন। এটি চালু না হলে ইমেইল বা ফোনে যোগাযোগ করুন।",
       "rateError": "অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন। আপনার বার্তা ও সংযুক্তি এখানেই আছে।",
@@ -625,7 +627,7 @@ export const content = {
       "sections": [
         {
           "heading": "আপনি যে তথ্য দেন",
-          "text": "যোগাযোগ ফর্ম চালু থাকলে এতে নাম, উত্তর দেওয়ার ইমেইল, আগ্রহের সেবা, ইমেইলের বিষয় ও বার্তা চাওয়া হয়। কোম্পানি, ফোন এবং একটি সংযুক্তি ঐচ্ছিক। জমা দেওয়া ফাইলের নাম ও বিষয়বস্তু আমরা পাই। সরাসরি ইমেইল বা ফোন করলে আপনি সেই মাধ্যমে যে তথ্য দেন আমরা তা পাই।"
+          "text": "যোগাযোগ ফর্ম চালু থাকলে এতে নাম, উত্তর দেওয়ার ইমেইল, আগ্রহের সেবা, ইমেইলের বিষয় ও বার্তা চাওয়া হয়। কোম্পানি, ফোন ও সংযুক্তি ঐচ্ছিক। জমা দেওয়া ফাইলগুলোর নাম ও বিষয়বস্তু আমরা পাই। সরাসরি ইমেইল বা ফোন করলে আপনি সেই মাধ্যমে যে তথ্য দেন আমরা তা পাই।"
         },
         {
           "heading": "কেন ব্যবহার করি",
