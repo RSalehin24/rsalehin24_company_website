@@ -21,7 +21,7 @@ Configured on 2026-10-09:
 
 - Worker: `rsalehin24-contact`, with endpoint `https://rsalehin24-contact.rsalehin24.workers.dev/contact`.
 - Managed Turnstile widget: `RSalehin24 contact`, allowing `www.rsalehin24.me` and `rsalehin24.me`, with pre-clearance off.
-- Brevo: transactional email enabled; `mail@rsalehin24.me` is an active sender. The Brevo API key and Turnstile secret are private Worker secret bindings.
+- Brevo: transactional email enabled; `mail@rsalehin24.me` is active registered sender ID `4`. The Worker references that ID directly. The Brevo API key and Turnstile secret are private Worker secret bindings.
 - GitHub: both public contact variables are configured. The website is deployed by GitHub Pages.
 
 A provider verification email with English/Bangla text and a real TXT attachment was accepted by Brevo, and its delivery log reports `delivered`. The owner confirmed mailbox receipt and correct attachment contents. Complete the real form checks below; this provider test alone does not verify the complete browser submission path.
@@ -69,7 +69,7 @@ Open the Worker → Settings → Variables and Secrets. Add these as **Secret** 
 - `BREVO_API_KEY`: the API key created in Brevo.
 - `TURNSTILE_SECRET_KEY`: the private Turnstile secret key.
 
-The plain text variable `BREVO_SENDER_EMAIL` defaults to `mail@rsalehin24.me` in `worker/wrangler.jsonc`. If Brevo verifies a different sender, change this value in that file and deploy again. The recipient remains fixed.
+The plain text variables in `worker/wrangler.jsonc` select `BREVO_SENDER_EMAIL=mail@rsalehin24.me` and `BREVO_SENDER_ID=4`, verified against this Brevo account. With an ID configured, Brevo uses the registered sender's address and display name. An invalid ID fails before either provider is contacted. If you change Brevo accounts or senders, update both values to match a verified sender and deploy again. Remove the ID to use Brevo's email/name selection instead. The recipient remains fixed.
 
 Copy the deployed Worker URL and append `/contact`, for example `https://rsalehin24-contact.YOUR_SUBDOMAIN.workers.dev/contact`. Keep its `workers.dev` URL enabled. No DNS changes to www, the apex, mail, library or ereader are needed. Requests without the approved website origin or with missing credentials are rejected; opening the URL directly in a browser is not an email test.
 

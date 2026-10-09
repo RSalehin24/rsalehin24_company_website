@@ -1,5 +1,5 @@
-import { ContactError, isEmail, readInquiry, readSubmission } from './validation.mjs';
-import { deliverInquiry, verifyChallenge } from './delivery.mjs';
+import { ContactError, readInquiry, readSubmission } from './validation.mjs';
+import { deliverInquiry, emailSender, verifyChallenge } from './delivery.mjs';
 
 const origins = new Set(['https://www.rsalehin24.me', 'https://rsalehin24.me']);
 
@@ -19,9 +19,10 @@ function checkRequest(request, env) {
   if (!origins.has(request.headers.get('Origin'))) throw new ContactError('origin', 403);
   if (request.method !== 'POST' && request.method !== 'OPTIONS') throw new ContactError('method', 405);
   if (request.method === 'OPTIONS') return;
-  if (!env.BREVO_API_KEY || !env.TURNSTILE_SECRET_KEY || !isEmail(env.BREVO_SENDER_EMAIL)) {
+  if (!env.BREVO_API_KEY || !env.TURNSTILE_SECRET_KEY) {
     throw new ContactError('unconfigured', 503);
   }
+  emailSender(env);
 }
 
 async function acceptSubmission(request, env, fetchRequest) {

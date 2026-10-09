@@ -69,6 +69,22 @@ test('supports no attachment and both website origins', async () => {
  }
 });
 
+test('uses the registered sender ID and rejects an invalid ID before contacting providers', async () => {
+ const mock = deliveryMock();
+ const form = inquiryForm();
+ form.append('sender', 'attacker@example.com');
+ const response = await handleContact(requestFor(form), {...env, BREVO_SENDER_ID:'4'}, mock.fetchRequest);
+ assert.equal(response.status,200);
+ assert.deepEqual(JSON.parse(mock.calls[1].request.body).sender,{id:4});
+ for (const id of ['-1','0','invalid','1.5','9007199254740992']) {
+  const rejected = deliveryMock();
+  const result = await handleContact(requestFor(inquiryForm()), {...env, BREVO_SENDER_ID:id}, rejected.fetchRequest);
+  assert.equal(result.status,503);
+  assert.equal((await result.json()).code,'unconfigured');
+  assert.equal(rejected.calls.length,0);
+ }
+});
+
 test('delivers Excel directly and packages Markdown, SVG and DCX with their original names and bytes', async () => {
  for (const name of ['brief.xlsx', 'notes.md', 'image.svg', 'image.dcx', 'brief.docs']) {
   const form = inquiryForm();

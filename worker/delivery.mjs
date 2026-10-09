@@ -1,4 +1,4 @@
-import { ContactError } from './validation.mjs';
+import { ContactError, isEmail } from './validation.mjs';
 import { encodeAttachment } from './attachments.mjs';
 
 export const recipient = 'mail@rsalehin24.me';
@@ -6,6 +6,14 @@ const turnstileURL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 const brevoURL = 'https://api.brevo.com/v3/smtp/email';
 const verificationTimeout = 10_000;
 const deliveryTimeout = 20_000;
+
+export function emailSender(env) {
+  if (!isEmail(env.BREVO_SENDER_EMAIL)) throw new ContactError('unconfigured', 503);
+  if (!env.BREVO_SENDER_ID) return { email: env.BREVO_SENDER_EMAIL, name: 'RSalehin24 website' };
+  const id = Number(env.BREVO_SENDER_ID);
+  if (!Number.isSafeInteger(id) || id < 1) throw new ContactError('unconfigured', 503);
+  return { id };
+}
 
 export async function verifyChallenge(context, fetchRequest) {
   const token = context.form.get('cf-turnstile-response');
@@ -29,10 +37,10 @@ function escapeHTML(value) {
   return value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 }
 
-async function emailPayload(inquiry, senderEmail) {
+async function emailPayload(inquiry, sender) {
   const text = emailText(inquiry);
   const payload = {
-    sender: { email: senderEmail, name: 'RSalehin24 website' },
+    sender,
     to: [{ email: recipient, name: 'RSalehin24' }],
     replyTo: { email: inquiry.email, name: inquiry.name },
     subject: inquiry.subject, textContent: text,
@@ -43,7 +51,7 @@ async function emailPayload(inquiry, senderEmail) {
 }
 
 export async function deliverInquiry(context, fetchRequest) {
-  const payload = await emailPayload(context.inquiry, context.env.BREVO_SENDER_EMAIL);
+  const payload = await emailPayload(context.inquiry, emailSender(context.env));
   const response = await fetchRequest(brevoURL, {
     method: 'POST', headers: { 'api-key': context.env.BREVO_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(payload), signal: AbortSignal.timeout(deliveryTimeout),

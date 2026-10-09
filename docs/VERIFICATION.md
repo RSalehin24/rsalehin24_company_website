@@ -6,7 +6,7 @@ Verified on 2026-10-09 against the Astro production output. The GitHub Actions w
 
 - Astro production build: 12 localized content routes, English/Bangla 404 pages and sitemap generated.
 - Astro check: zero errors, warnings or hints.
-- Node tests: 17 passed, covering provider configuration, fixed-recipient email delivery, expanded attachment formats, exact binary attachment encoding, independent ZIP-format fixtures, validation, upload/request limits, spam verification, origin/method checks and provider failures/timeouts.
+- Node tests: 18 passed, covering provider configuration, registered sender selection and invalid IDs, fixed-recipient email delivery, expanded attachment formats, exact binary attachment encoding, independent ZIP-format fixtures, validation, upload/request limits, spam verification, origin/method checks and provider failures/timeouts.
 - Static verification passed for default, Formspree and Cloudflare/Brevo output: unique localized titles and descriptions, self-canonicals, reciprocal en/bn and x-default links, Open Graph metadata, business/service structured data, sitemap, robots, CNAME, links, responsive images and 404 noindex.
 - Public HTML contains no repository links, localhost references or developer setup instructions. Company contact details match the supplied reference.
 
@@ -60,6 +60,7 @@ The Cloudflare Worker, Managed Turnstile widget, private Brevo/Turnstile secret 
 - The owner's website inquiries reached Brevo but bounced with `DMARC checks failed`. Cloudflare's receiving log recorded SPF pass, DKIM neutral and DMARC fail. Both DKIM DNS records matched Brevo's authenticated-domain configuration. Reauthentication did not immediately resolve the next website inquiry. Direct English/Bangla tests passed SPF, DKIM and DMARC and showed delivered in Cloudflare's receiving log; the owner confirmed their receipt.
 - A subsequent private diagnostic sent a real TXT attachment through the existing delivery module inside the actual Cloudflare Worker and was reported delivered by Brevo. Its API key matched the successful direct tests. A real Markdown-in-ZIP test was also reported delivered. Temporary diagnostic code and bindings were removed and version previews disabled. A fresh human-completed website submission still needs confirmation; the precise cause of the earlier authentication failures was not established. The domain's reject policy was preserved.
 - The updated production Worker accepts MD, DOC, DOCS, DOCX, DCX, SVG, XLSX, PNG, WebP, HEIC and AVIF fixtures through file validation, then rejects each for the deliberately missing spam token without sending email. The temporary diagnostic route returns 404; only the Brevo key, sender and Turnstile secret bindings remain. Python independently opens the generated ZIP and verifies its Bengali filename, original contents and CRC.
+- A subsequent private Worker diagnostic exercised multipart serialization, bounded parsing, field/file validation and the delivery module with a real PNG whose filename contains spaces and parentheses. The attachment's encoded bytes matched exactly, and Brevo reported delivery both with and without that attachment. Human website submissions continued to bounce with DMARC failures despite these passing diagnostics. Sender selection now references verified Brevo sender ID `4` directly, with regression coverage; a fresh website submission must confirm whether it resolves the delivery failure.
 
 Complete human verification and submission from both localized forms. Provider receipt and mocked browser tests alone cannot prove the complete browser-to-Worker delivery path.
 
@@ -93,6 +94,8 @@ Earlier production-preview lab results using Lighthouse 13.5.0 and installed Chr
 | /bn/privacy/ | 98 | 100 | 100 |
 
 The live attachment form initially scored 98/100/100 in English and 74–75/100/100 in Bangla. The Bangla report showed verification traffic during the initial paint. After deferring Turnstile until form interaction or proximity, the configured production preview scored 98/100/100 in English and 99/100/100 in Bangla. After GitHub Pages deployed commit `d8d466a`, the production URLs scored 96/100/100 at `/contact/` and 100/100/100 at `/bn/contact/`. Scores are performance/accessibility/SEO, using the same mobile Lighthouse configuration.
+
+After deployment of the expanded attachment formats in commit `ef3636c`, the live English form scored 99/100/100 and the Bangla form 100/100/100. Both served the complete 26-extension upload list and localized ZIP notice, loaded the real verification frame on interaction, and passed mobile WCAG scans without overflow or JavaScript errors.
 
 Fonts and images are self-hosted. Responsive hero images were compressed and cropped at build time, and the primary English/Bengali font is preloaded. Full Lighthouse JSON/HTML reports are stored in .audit/. Deployed scores can vary with network and hosting conditions.
 
