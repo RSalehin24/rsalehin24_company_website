@@ -15,7 +15,7 @@ Configured on 2026-10-09:
 
 A provider verification email with English/Bangla text and a real TXT attachment was accepted by Brevo, and its delivery log reports `delivered`. The owner confirmed mailbox receipt and correct attachment contents. Complete the real form checks below; this provider test alone does not verify the complete browser submission path.
 
-The approved live form tests stopped at the English human check: Turnstile rejected the automated browser and did not issue a token. Neither localized test was submitted. Complete both checks in a normal browser using the steps below.
+The automated live form tests stopped at the English human check: Turnstile rejected the automated browser and did not issue a token. The owner's later website submission reached Brevo but Cloudflare Email Routing rejected it for failed DMARC, with DKIM recorded as neutral. DNS records matched Brevo's authenticated domain. After refreshing domain authentication through Brevo's API, both new English/Bangla attachment tests passed SPF, DKIM and DMARC and showed delivered in Cloudflare's log. These two tests exercised the delivery module directly; confirm mailbox receipt and retry the website form using the steps below.
 
 The Worker was uploaded through the Cloudflare API. GitHub Pages deployments update the website; redeploy the Worker separately after changes to `worker/` or `src/lib/contact-rules.mjs`, or connect Cloudflare Git builds as described below. Local credentials are kept in ignored `worker/.dev.vars.setup`; never commit or paste them into chat.
 
@@ -33,7 +33,7 @@ In Cloudflare → Turnstile, create a **Managed** widget for `www.rsalehin24.me`
 
 [Turnstile widget setup](https://developers.cloudflare.com/turnstile/get-started/widget-management/dashboard/), [server verification](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
 
-The compact widget fits narrow mobile forms. It loads when a visitor focuses the form or scrolls within 300 px of the check, and its space is reserved to avoid a layout jump. Browsers without IntersectionObserver load it immediately. Its own interface uses English because [Turnstile does not currently support Bengali](https://developers.cloudflare.com/turnstile/reference/supported-languages/); the form labels, validation and feedback remain fully localized.
+The horizontal widget uses Cloudflare's flexible size: 65 px tall, filling the available width with a 300 px minimum. Narrow layouts center it within the form, with extra panel width below 360 px. It loads when a visitor focuses the form or scrolls within 300 px of the check, and its space is reserved to avoid a layout jump. Browsers without IntersectionObserver load it immediately. Its own interface uses English because [Turnstile does not currently support Bengali](https://developers.cloudflare.com/turnstile/reference/supported-languages/); the form labels, validation and feedback remain fully localized. See [widget sizes](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/widget-configurations/#widget-sizes).
 
 ## 3. Deploy the Worker
 
@@ -83,6 +83,8 @@ From the deployed English contact page, submit a message with a small attachment
 - Company, phone and service details are included.
 
 Repeat from the Bangla page, including Bengali subject/body text. The success message means Brevo accepted the send request; it does not prove that the mailbox received it. Check Brevo's transactional logs and spam folder if receipt is delayed. Monitor account sending limits, Worker CPU limits and large-file behavior on your chosen service plans.
+
+If an accepted message bounces with `DMARC checks failed`, compare Brevo's transactional event with Cloudflare Email Routing's authentication results. Check both DKIM records against the domain configuration in Brevo, and refresh [domain authentication](https://developers.brevo.com/docs/domain-authentication-and-verification) when appropriate. Confirm DKIM/DMARC pass on a subsequent test. A domain showing authenticated in the dashboard alone does not prove that an individual email passed authentication.
 
 The frontend preserves text and the selected file on errors, prevents duplicate clicks, and resets only after confirmed acceptance. It has a 40-second timeout. The Worker limits total request size, validates fields/files, checks a honeypot, verifies Turnstile, and does not store submissions in a database or log their contents. It does not retry an uncertain send automatically. With JavaScript disabled or a blocked verification service, visitors can use the visible direct email and phone links.
 

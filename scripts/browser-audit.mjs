@@ -78,9 +78,12 @@ async function verifyWordmark(page) {
  const marks=page.locator('.wordmark');
  assert.equal(await marks.count(),2);
  for(const mark of await marks.all()) {
-  assert.equal((await mark.innerText()).trim(),'RSalehin24');
-  const sizes=await mark.evaluate(element=>({brand:getComputedStyle(element).fontSize,number:getComputedStyle(element.querySelector('.brand-number')).fontSize}));
+  assert.equal((await mark.innerText()).trim(),'RSalehiN24™');
+  await expect(mark).toHaveAttribute('aria-label','RSalehin24');
+  const sizes=await mark.evaluate(element=>({brand:getComputedStyle(element).fontSize,number:getComputedStyle(element.querySelector('.brand-number')).fontSize,trademark:getComputedStyle(element.querySelector('.brand-trademark')).fontSize}));
   assert.equal(sizes.number,sizes.brand);
+  assert.ok(parseFloat(sizes.trademark)<parseFloat(sizes.brand));
+  await expect(mark.locator('.brand-trademark')).toHaveCSS('vertical-align','super');
  }
 }
 function buildFixture(directory, publicConfiguration = {}) {
@@ -159,7 +162,7 @@ try{
  await expect(plain.locator('.direct-details a[href="tel:+8801608537383"]')).toBeVisible();await nojs.close();
  results.push('All primary content and navigation readable without JavaScript; configured form retains native validation');
  // Match the provider's ready() rejection for our asynchronously loaded script.
- const mockChallenge=`window.turnstile={ready:()=>{throw new Error('ready() cannot be used with async scripts');},render:(container,options)=>{window.auditChallengeOptions=options;const widget=document.createElement('div');widget.style.width=options.size==='compact'?'150px':'300px';widget.style.height=options.size==='compact'?'140px':'65px';container.append(widget);const field=document.createElement('input');field.type='hidden';field.name='cf-turnstile-response';field.value='audit-token';container.append(field);return 'audit-widget';},reset:()=>{document.body.dataset.challengeResets=String(Number(document.body.dataset.challengeResets||0)+1);document.querySelector('[name="cf-turnstile-response"]').value='audit-token';}};`;
+ const mockChallenge=`window.turnstile={ready:()=>{throw new Error('ready() cannot be used with async scripts');},render:(container,options)=>{window.auditChallengeOptions=options;const widget=document.createElement('div');widget.style.width=options.size==='flexible'?'100%':options.size==='compact'?'150px':'300px';widget.style.minWidth=options.size==='flexible'?'300px':'0';widget.style.height=options.size==='compact'?'140px':'65px';container.append(widget);const field=document.createElement('input');field.type='hidden';field.name='cf-turnstile-response';field.value='audit-token';container.append(field);return 'audit-widget';},reset:()=>{document.body.dataset.challengeResets=String(Number(document.body.dataset.challengeResets||0)+1);document.querySelector('[name="cf-turnstile-response"]').value='audit-token';}};`;
  let challengeLoads=0;
  await page.route('https://challenges.cloudflare.com/**',route=>{challengeLoads++;return route.fulfill({status:200,contentType:'application/javascript',body:mockChallenge});});
  await page.setViewportSize({width:1440,height:1000});
@@ -182,7 +185,7 @@ try{
    await page.locator('[data-turnstile]').scrollIntoViewIfNeeded();
    await page.locator('#email').focus();
    assert.equal(challengeLoads,initialLoads+1,'focus and scrolling share one verification script');
-   assert.equal(await page.evaluate(()=>window.auditChallengeOptions.size),'compact');
+   assert.equal(await page.evaluate(()=>window.auditChallengeOptions.size),'flexible');
    assert.equal(await page.evaluate(()=>window.auditChallengeOptions.language),'en');
    const resets=await page.evaluate(()=>Number(document.body.dataset.challengeResets||0));
    await page.evaluate(()=>window.auditChallengeOptions['expired-callback']());
@@ -234,8 +237,14 @@ try{
   await page.locator('[name="_gotcha"]').evaluate(e=>e.value='');
   await page.setViewportSize({width:1280,height:900});await page.evaluate(()=>document.documentElement.style.zoom='2');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'form 200% zoom '+provider+' '+language);await page.evaluate(()=>document.documentElement.style.zoom='1');
-  for(const width of [360,768,1440]) {
+  for(const width of [320,360,768,1440]) {
    await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'form overflow '+provider+' '+language+' '+width);
+   if(provider==='brevo'){
+    const bounds=await page.locator('[data-turnstile]>div').boundingBox();
+    assert.ok(bounds.width>bounds.height,'verification is wider than tall');
+    assert.equal(bounds.height,65);
+    assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'verification fits the viewport');
+   }
    const a11y=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();assert.deepEqual(a11y.violations,[]);
    if(provider==='brevo')await page.locator('.contact-form-panel').screenshot({path:join(artifacts,'email-form-'+language+'-'+width+'.png')});
   }
@@ -267,7 +276,7 @@ try{
  await timedRequest.abort();await timeoutPage.close();
  results.push('Both languages and providers: subject/body/attachment multipart delivery, attachment type/empty/size validation, spam verification and expiry, blocked verification script, missing endpoint, preserved text and files after errors, provider/network/rate/invalid-response errors, 40-second timeout, duplicate prevention, success reset and honeypot passed; no real submission sent');
  assert.deepEqual(errors,[]);results.push('No browser JavaScript errors');
- results.push('Both languages: Gmail compose links and popup navigation (intercepted), mail-app and call actions, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have no dot and full-size numerals.');
+ results.push('Both languages: Gmail compose links and popup navigation (intercepted), mail-app and call actions, encoded inquiry subject, copy success, clipboard denial/unavailability, manual selection and no-JavaScript contact options passed. Header/footer wordmarks have uppercase N, a small raised trademark, no dot and full-size numerals.');
  await writeFile(join(artifacts,'browser-results.json'),JSON.stringify({date:new Date().toISOString(),checks,results},null,2));
  console.log(results.join('\n'));
 }finally{await browser.close();main.server.close();fixture.server.close();workerFixture.server.close();}

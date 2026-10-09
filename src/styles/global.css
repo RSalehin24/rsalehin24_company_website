@@ -40,6 +40,7 @@
  .wordmark { flex-shrink:0; font-family:var(--serif); font-size:1.8rem; line-height:1.2; letter-spacing:-.08em; font-weight:550; }
  .brand-middle { font-weight:350; }
  .brand-number { font-size:1em; font-variant-numeric:lining-nums; letter-spacing:-.08em; margin-left:.09em; }
+ .brand-trademark { font-family:var(--font); font-size:.4em; font-weight:500; letter-spacing:0; vertical-align:super; margin-left:.3em; line-height:0; }
  .primary-nav { display:flex; gap:2rem; margin-left:auto; }
  .primary-nav a { font-size:.9rem; padding:.75rem 0; position:relative; color:var(--muted); }
  .primary-nav a:hover,.primary-nav a[aria-current="page"] { color:var(--text); }
@@ -168,7 +169,7 @@
  .form-field input[type="file"] { font-size:.85rem; overflow:hidden; }
  .form-field input[type="file"]::file-selector-button { background:var(--panel); color:var(--text); border:1px solid var(--line); padding:.45rem .7rem; margin-right:.75rem; cursor:pointer; }
  .challenge-field { margin-bottom:1.5rem; }
- [data-turnstile] { min-height:140px; }
+ [data-turnstile] { min-height:65px; margin-inline:min(0px,calc(50% - 150px)); }
  .form-field .form-note { margin-bottom:.75rem; }
  .form-note { font-size:.83rem; color:var(--muted); }
  .form-note a { text-decoration:underline; }
@@ -282,5 +283,6 @@
   .lang-bn .hero-landscape { top:25rem; }
   .lang-bn .page-intro h1 { font-size:clamp(2rem,8vw,3.3rem); }
  }
+ @media (max-width:359px) { .contact-form-panel { margin-inline:-1rem; } }
  @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *,*::before,*::after { transition:none !important; animation:none !important; } }
 }

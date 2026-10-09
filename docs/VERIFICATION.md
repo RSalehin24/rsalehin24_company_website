@@ -38,7 +38,7 @@ Tested both languages using separate production fixtures for Cloudflare/Brevo an
 - Honeypot: filled spam field blocks outgoing requests.
 - Configured HTML form retains native validation and a Formspree action without JavaScript.
 - Cloudflare delivery verifies tokens before sending and refreshes them after attempts. Expired tokens, missing/failed verification and a blocked verification script are covered. Its no-JavaScript state disables sending and displays direct alternatives.
-- Both providers and languages passed mobile/tablet/desktop axe checks and layout checks, including 200% zoom. Compact Turnstile dimensions are represented by the browser mock and inspected on the live site; it uses English because Bengali is unsupported by Turnstile.
+- Both providers and languages passed mobile/tablet/desktop axe checks and layout checks, including 200% zoom. The horizontal Turnstile mock represents flexible width with a 300 px minimum and 65 px height; checks include 320 px phones and confirm the widget fits within the viewport. It uses English because Bengali is unsupported by Turnstile.
 - Direct panel contains separate Gmail and email app links with an encoded inquiry subject, plus a call link to +8801608537383. Gmail popup navigation and prefilled recipient/subject are tested using intercepted browser requests; no real Gmail draft or message is created.
 - English/Bangla copy-email success, denied clipboard permission and missing Clipboard API tested. Failure selects the address for manual copying and re-enables the action.
 - The email address remains selectable and Gmail, email app and phone links remain visible without JavaScript. Opening a visitor’s external email app depends on that visitor’s configured mail handler; the copy option supports webmail.
@@ -55,6 +55,7 @@ The Cloudflare Worker, Managed Turnstile widget, private Brevo/Turnstile secret 
 - After deployment, both production contact pages deferred Turnstile until form interaction, then loaded its real iframe, passed mobile WCAG scans with no horizontal overflow, and produced no page JavaScript errors. The visible human-verification checkbox was inspected.
 - The owner approved two complete form tests with TXT attachments. The English test stopped at human verification: Turnstile rejected the automated browser, so no token or form POST was produced. Neither the English nor Bangla test was sent. Complete both submissions in a normal browser.
 - Turnstile now loads on form focus or near the check. Regression checks confirm deferred loading, one script shared by focus/scroll triggers, token reset and the blocked-script error path. Reserved widget space prevents a layout jump.
+- The owner's later website inquiry reached Brevo but bounced with `DMARC checks failed`. Cloudflare's receiving log recorded SPF pass, DKIM neutral and DMARC fail. Both DKIM DNS records matched Brevo's authenticated-domain configuration. The domain was reauthenticated through Brevo's API; both subsequent English/Bangla attachment tests passed SPF, DKIM and DMARC and showed delivered in Cloudflare's receiving log. The tests called the existing delivery module directly, so mailbox receipt and a new website submission still need confirmation. The domain's reject policy was preserved.
 
 Complete human verification and submission from both localized forms. Provider receipt and mocked browser tests alone cannot prove the complete browser-to-Worker delivery path.
 
@@ -62,7 +63,7 @@ Complete human verification and submission from both localized forms. Provider r
 
 Reviewed the project against `AGENTS.md`. Page selection is now separate from page content; six page components use a shared introduction where applicable, and Home/Services reuse the process section. Header/footer use one wordmark component. Form submission state is encapsulated in a controller, with field validation and email copying in separate modules. No dependencies were added.
 
-Header and footer wordmarks render `RSalehin24` without a dot, with lining numerals at the same font size as the main wordmark. This is checked across the mobile, tablet and desktop viewports. Production build, static checks, configured and unconfigured contact states, all-route browser checks and accessibility scans were rerun after refactoring.
+Header and footer wordmarks render `RSalehiN24™` without a dot, with uppercase N, lining numerals at the same font size as the main wordmark and a smaller superscript trademark symbol. The accessible name and company metadata remain `RSalehin24`. This is checked across the mobile, tablet and desktop viewports. Production build, static checks, configured and unconfigured contact states, all-route browser checks and accessibility scans were rerun after refactoring.
 
 ## Live domain checks
 

@@ -53,7 +53,7 @@ export class ContactChallenge {
       this.widget = this.api.render(container, {
         sitekey: container.dataset.sitekey || '', action: 'contact',
         // Turnstile does not currently support Bangla.
-        language: 'en', theme: 'dark', size: 'compact',
+        language: 'en', theme: 'dark', size: 'flexible',
         'error-callback': this.showError, 'expired-callback': () => this.reset(),
       });
     } catch { this.showError(); }
