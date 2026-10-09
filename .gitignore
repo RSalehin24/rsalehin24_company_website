@@ -6,3 +6,4 @@ dist/
 !.env.example
 .audit/
 .DS_Store
+AGENTS.md
