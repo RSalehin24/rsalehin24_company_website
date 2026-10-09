@@ -41,7 +41,7 @@ EPUB Reader is linked only to `company.readerUrl`, verified against its domain f
 
 ## Contact delivery
 
-The form takes a reply email, subject, message and optional attachment, alongside the existing project fields. Cloudflare + Brevo sends real attachments to `mail@rsalehin24.me`. Deploy the Worker, set its private secrets, then add `PUBLIC_CONTACT_ENDPOINT` and `PUBLIC_TURNSTILE_SITE_KEY` as GitHub repository variables. See [email setup](docs/CONTACT.md) for exact steps and inbox verification. No new website DNS records are required.
+The form takes a reply email, subject, message and optional attachment, alongside the existing project fields. Cloudflare + Brevo sends real attachments to `mail@rsalehin24.me`. The Worker, private secrets, Turnstile widget and public GitHub variables are configured. See [email setup](docs/CONTACT.md) for the current deployment, future Worker updates and inbox verification. No new website DNS records are required.
 
 Copy `.env.example` to `.env` for local public configuration. Never embed an email API key or a Turnstile secret in the static site. The existing `PUBLIC_FORMSPREE_ENDPOINT` is an alternative; uploads require a paid Formspree plan and are delivered as file links. Worker configuration takes precedence when present. Missing configuration shows separate Gmail, email app, phone and copy-email actions. The address remains selectable without JavaScript; clipboard failures select it for manual copying.
 
@@ -49,7 +49,7 @@ Enhanced submission adds localized validation, progress, duplicate prevention, a
 
 ## Browser verification
 
-`npm run audit` uses installed Chrome by default. It builds ignored fixtures for both providers, intercepts all sends and the spam widget, and never sends an actual inquiry. It checks all routes at 360, 768 and 1440px, automated WCAG scans, keyboard/menu behavior, reduced motion, zoom, no-JavaScript readability, multipart file delivery, validation, retained files/text after errors, both-language contact states, clipboard behavior and the wordmark. Worker tests use mocked Brevo and Turnstile APIs and verify the binary attachment and fixed recipient.
+`npm run audit` uses installed Chrome by default. It builds isolated, ignored fixtures for unconfigured delivery and both providers, independently of your local public configuration. It intercepts all sends and the spam widget, and never sends an actual inquiry. It checks all routes at 360, 768 and 1440px, automated WCAG scans, keyboard/menu behavior, reduced motion, zoom, no-JavaScript readability, multipart file delivery, validation, retained files/text after errors, both-language contact states, clipboard behavior and the wordmark. Worker tests use mocked Brevo and Turnstile APIs and verify the binary attachment and fixed recipient.
 
 ```sh
 npm run audit

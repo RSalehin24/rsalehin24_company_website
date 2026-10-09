@@ -4,6 +4,19 @@ The English and Bangla contact pages include name, reply email, optional company
 
 Until a provider is configured, the public site shows direct contact options. A local preview or successful automated test cannot confirm inbox delivery.
 
+## Current deployment
+
+Configured on 2026-10-09:
+
+- Worker: `rsalehin24-contact`, with endpoint `https://rsalehin24-contact.rsalehin24.workers.dev/contact`.
+- Managed Turnstile widget: `RSalehin24 contact`, allowing `www.rsalehin24.me` and `rsalehin24.me`, with pre-clearance off.
+- Brevo: transactional email enabled; `mail@rsalehin24.me` is an active sender. The Brevo API key and Turnstile secret are private Worker secret bindings.
+- GitHub: both public contact variables are configured. The website is deployed by GitHub Pages.
+
+A provider verification email with English/Bangla text and a real TXT attachment was accepted by Brevo, and its delivery log reports `delivered`. The owner confirmed mailbox receipt and correct attachment contents. Complete the real form checks below; this provider test alone does not verify the complete browser submission path.
+
+The Worker was uploaded through the Cloudflare API. GitHub Pages deployments update the website; redeploy the Worker separately after changes to `worker/` or `src/lib/contact-rules.mjs`, or connect Cloudflare Git builds as described below. Local credentials are kept in ignored `worker/.dev.vars.setup`; never commit or paste them into chat.
+
 ## 1. Prepare Brevo
 
 In your existing Brevo account, confirm that transactional email sending is enabled and that `mail@rsalehin24.me` is a verified sender. The existing Brevo DNS records help authenticate your domain, but they do not create an API key or confirm that transactional sending is enabled. Create an API key in Brevo's SMTP & API settings. Keep it for the Worker secret below; do not put it in GitHub variables, website code or a chat message.
@@ -22,7 +35,9 @@ The compact widget fits narrow mobile forms. Its own interface uses English beca
 
 ## 3. Deploy the Worker
 
-In Cloudflare → Workers & Pages, create a Worker connected to this GitHub repository. This deploys the email service separately from the GitHub Pages website.
+The Worker deploys separately from the GitHub Pages website. For future manual deployments, authenticate Wrangler to the correct Cloudflare account, then run `npx wrangler deploy --config worker/wrangler.jsonc` from the repository root. Existing Worker secrets stay private; check that both secret bindings remain present after deployment.
+
+To automate future Worker deployments, connect the existing Worker to this GitHub repository through Cloudflare → Workers & Pages → Git builds, using these settings:
 
 | Setting | Value |
 | --- | --- |

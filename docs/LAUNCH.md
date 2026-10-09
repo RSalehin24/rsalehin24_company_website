@@ -1,10 +1,10 @@
 # Launch RSalehin24 on GitHub Pages
 
-## Email delivery: required to enable the form
+## Email delivery
 
-Follow [CONTACT.md](CONTACT.md) to deploy the Cloudflare Worker, configure Brevo and Turnstile, and set the two public GitHub variables. This enables subject, message and attachment submission directly on the site, with delivery to `mail@rsalehin24.me`. The existing Formspree alternative requires a paid plan for uploads and delivers file links. Keep delivery unconfigured until it is ready; direct email and phone remain available.
+Cloudflare, Brevo, Turnstile and the two public GitHub variables are configured as of 2026-10-09. The contact form accepts subject, message and an optional attachment, with delivery to `mail@rsalehin24.me`. See [CONTACT.md](CONTACT.md) for the current endpoint, maintenance and recovery setup. Direct email and phone remain available.
 
-Confirm inbox receipt in both languages, the entered subject/body, reply address and attachment contents. Automated tests mock the sending APIs and cannot verify actual receipt.
+Brevo's log reports the provider attachment test as delivered, and the owner confirmed receipt and attachment contents. Complete submission checks from both localized forms. Automated tests mock the sending APIs and cannot verify actual receipt.
 
 ## Repository and Pages
 

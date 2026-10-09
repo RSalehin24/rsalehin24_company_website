@@ -43,7 +43,17 @@ Tested both languages using separate production fixtures for Cloudflare/Brevo an
 - English/Bangla copy-email success, denied clipboard permission and missing Clipboard API tested. Failure selects the address for manual copying and re-enables the action.
 - The email address remains selectable and Gmail, email app and phone links remain visible without JavaScript. Opening a visitor’s external email app depends on that visitor’s configured mail handler; the copy option supports webmail.
 
-The Cloudflare Worker, Turnstile widget and Brevo secrets are not configured in the owner's account. Deploying them and confirming inbox/attachment receipt remain required to enable live sending. Missing public configuration continues to show direct options. See [CONTACT.md](CONTACT.md). Mocked tests cannot establish actual mail receipt.
+The Cloudflare Worker, Managed Turnstile widget, private Brevo/Turnstile secret bindings and public GitHub variables are configured. Both localized forms are enabled on GitHub Pages. Missing public configuration continues to show direct options. See [CONTACT.md](CONTACT.md).
+
+## Live email deployment
+
+- Brevo's API confirms transactional email is enabled and `mail@rsalehin24.me` is an active sender.
+- A real provider test sent English/Bangla text and `rsalehin24-attachment-test.txt`. Brevo reports delivery, and the owner confirmed inbox receipt and correct attachment contents.
+- Live Worker checks passed for www/apex CORS preflights, blocked foreign origins, required-field validation and missing spam tokens. A 5 MiB upload was parsed and rejected for missing verification without sending email; this checks upload parsing, not maximum-size email delivery.
+- A live browser check caught Turnstile rejecting `ready()` on an asynchronously loaded script. The loader now renders after the script's load event; the browser regression mock rejects `ready()` to cover the provider's behavior.
+- Browser audits use independent unconfigured/Formspree/Worker fixtures so local production variables cannot change the expected test states. All sends and test widgets remain intercepted in that audit.
+
+Recheck the real widget and complete submission from both localized forms after the loader fix is deployed. Provider receipt and mocked browser tests alone cannot prove the complete browser-to-Worker delivery path.
 
 ## Refactoring and brand checks
 
@@ -78,6 +88,6 @@ Fonts and images are self-hosted. Responsive hero images were compressed and cro
 
 ## Remaining launch work
 
-Follow [CONTACT.md](CONTACT.md) to configure and verify Cloudflare/Brevo sending, and [LAUNCH.md](LAUNCH.md) to submit the sitemap to Search Console. Pages publishing, the custom domain, DNS and HTTPS have been configured; recheck them after future hosting or DNS changes.
+Complete the localized form submission checks in [CONTACT.md](CONTACT.md), and follow [LAUNCH.md](LAUNCH.md) to submit the sitemap to Search Console. Cloudflare/Brevo delivery, Pages publishing, the custom domain, DNS and HTTPS are configured; recheck them after future hosting, provider or DNS changes.
 
 EPUB Reader returned external HTTP 200 on 2026-10-09. Recheck reachability immediately before launch. eLibrary has no live button; Personal Financial Management is explicitly planned and at inception.

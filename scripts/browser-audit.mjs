@@ -83,12 +83,20 @@ async function verifyWordmark(page) {
   assert.equal(sizes.number,sizes.brand);
  }
 }
+function buildFixture(directory, publicConfiguration = {}) {
+ execFileSync(process.execPath,['node_modules/astro/bin/astro.mjs','build','--outDir',directory],{
+  env:{...process.env,PUBLIC_CONTACT_ENDPOINT:'',PUBLIC_TURNSTILE_SITE_KEY:'',PUBLIC_FORMSPREE_ENDPOINT:'',...publicConfiguration,ASTRO_TELEMETRY_DISABLED:'1'},
+  stdio:'pipe',
+ });
+}
+const unconfigured=join(artifacts,'unconfigured-site');
+buildFixture(unconfigured);
 const configured=join(artifacts,'form-site');
-execFileSync(process.execPath,['node_modules/astro/bin/astro.mjs','build','--outDir',configured],{env:{...process.env,PUBLIC_CONTACT_ENDPOINT:'',PUBLIC_TURNSTILE_SITE_KEY:'',PUBLIC_FORMSPREE_ENDPOINT:'https://formspree.io/f/audit1234',ASTRO_TELEMETRY_DISABLED:'1'},stdio:'pipe'});
+buildFixture(configured,{PUBLIC_FORMSPREE_ENDPOINT:'https://formspree.io/f/audit1234'});
 const workerConfigured=join(artifacts,'worker-site');
 const workerEndpoint='https://rsalehin24-contact.example.workers.dev/contact';
-execFileSync(process.execPath,['node_modules/astro/bin/astro.mjs','build','--outDir',workerConfigured],{env:{...process.env,PUBLIC_CONTACT_ENDPOINT:workerEndpoint,PUBLIC_TURNSTILE_SITE_KEY:'1x00000000000000000000AA',PUBLIC_FORMSPREE_ENDPOINT:'',ASTRO_TELEMETRY_DISABLED:'1'},stdio:'pipe'});
-const main=await serve(resolve('dist')), fixture=await serve(configured), workerFixture=await serve(workerConfigured);
+buildFixture(workerConfigured,{PUBLIC_CONTACT_ENDPOINT:workerEndpoint,PUBLIC_TURNSTILE_SITE_KEY:'1x00000000000000000000AA'});
+const main=await serve(unconfigured), fixture=await serve(configured), workerFixture=await serve(workerConfigured);
 const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL || 'chrome',headless:true});
 let checks=0;const results=[];
 try{
@@ -150,7 +158,8 @@ try{
  await plain.goto(workerFixture.url+'/contact/');await expect(plain.locator('button[type="submit"]')).toBeDisabled();await expect(plain.locator('noscript')).toBeVisible();
  await expect(plain.locator('.direct-details a[href="tel:+8801608537383"]')).toBeVisible();await nojs.close();
  results.push('All primary content and navigation readable without JavaScript; configured form retains native validation');
- const mockChallenge=`window.turnstile={ready:callback=>callback(),render:(container,options)=>{window.auditChallengeOptions=options;const widget=document.createElement('div');widget.style.width=options.size==='compact'?'150px':'300px';widget.style.height=options.size==='compact'?'140px':'65px';container.append(widget);const field=document.createElement('input');field.type='hidden';field.name='cf-turnstile-response';field.value='audit-token';container.append(field);return 'audit-widget';},reset:()=>{document.body.dataset.challengeResets=String(Number(document.body.dataset.challengeResets||0)+1);document.querySelector('[name="cf-turnstile-response"]').value='audit-token';}};`;
+ // Match the provider's ready() rejection for our asynchronously loaded script.
+ const mockChallenge=`window.turnstile={ready:()=>{throw new Error('ready() cannot be used with async scripts');},render:(container,options)=>{window.auditChallengeOptions=options;const widget=document.createElement('div');widget.style.width=options.size==='compact'?'150px':'300px';widget.style.height=options.size==='compact'?'140px':'65px';container.append(widget);const field=document.createElement('input');field.type='hidden';field.name='cf-turnstile-response';field.value='audit-token';container.append(field);return 'audit-widget';},reset:()=>{document.body.dataset.challengeResets=String(Number(document.body.dataset.challengeResets||0)+1);document.querySelector('[name="cf-turnstile-response"]').value='audit-token';}};`;
  await page.route('https://challenges.cloudflare.com/**',route=>route.fulfill({status:200,contentType:'application/javascript',body:mockChallenge}));
  await page.setViewportSize({width:1440,height:1000});
  for(const language of ['en','bn']){

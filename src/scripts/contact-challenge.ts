@@ -3,7 +3,6 @@ type TurnstileOptions = {
   'error-callback': () => void; 'expired-callback': () => void;
 };
 type TurnstileAPI = {
-  ready(callback: () => void): void;
   render(element: HTMLElement, options: TurnstileOptions): string;
   reset(widget: string): void;
 };
@@ -16,7 +15,8 @@ function loadTurnstile(): Promise<TurnstileAPI> {
     script.async = true;
     script.addEventListener('load', () => {
       if (!window.turnstile) return reject(new Error('Verification did not load'));
-      window.turnstile.ready(() => resolve(window.turnstile!));
+      // ready() rejects async scripts; the load event already guarantees API availability.
+      resolve(window.turnstile);
     }, { once: true });
     script.addEventListener('error', () => reject(new Error('Verification is unavailable')), { once: true });
     document.head.append(script);
