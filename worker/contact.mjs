@@ -1,5 +1,6 @@
 import { ContactError, readInquiry, readSubmission } from './validation.mjs';
 import { deliverInquiry, emailSender, verifyChallenge } from './delivery.mjs';
+import { reserveInquiryReference } from './inquiry-reference.mjs';
 
 const origins = new Set(['https://www.rsalehin24.me', 'https://rsalehin24.me']);
 
@@ -19,7 +20,7 @@ function checkRequest(request, env) {
   if (!origins.has(request.headers.get('Origin'))) throw new ContactError('origin', 403);
   if (request.method !== 'POST' && request.method !== 'OPTIONS') throw new ContactError('method', 405);
   if (request.method === 'OPTIONS') return;
-  if (!env.BREVO_API_KEY || !env.TURNSTILE_SECRET_KEY) {
+  if (!env.BREVO_API_KEY || !env.TURNSTILE_SECRET_KEY || !env.INQUIRY_COUNTER) {
     throw new ContactError('unconfigured', 503);
   }
   emailSender(env);
@@ -29,15 +30,17 @@ async function acceptSubmission(request, env, fetchRequest) {
   const form = await readSubmission(request);
   const inquiry = readInquiry(form);
   await verifyChallenge({ form, request, env }, fetchRequest);
-  await deliverInquiry({ inquiry, env }, fetchRequest);
+  const reference = await reserveInquiryReference(env.INQUIRY_COUNTER);
+  await deliverInquiry({ inquiry: { ...inquiry, reference }, env }, fetchRequest);
+  return reference;
 }
 
 export async function handleContact(request, env, fetchRequest = fetch) {
   try {
     checkRequest(request, env);
     if (request.method === 'OPTIONS') return responseFor(request, null, 204);
-    await acceptSubmission(request, env, fetchRequest);
-    return responseFor(request, { ok: true });
+    const reference = await acceptSubmission(request, env, fetchRequest);
+    return responseFor(request, { ok: true, reference });
   } catch (error) {
     const failure = error instanceof ContactError ? error : new ContactError('delivery', 502);
     if (!(error instanceof ContactError)) console.error('Contact service request failed');

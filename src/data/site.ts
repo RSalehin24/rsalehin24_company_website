@@ -294,6 +294,7 @@ export const content = {
       "tooLongError": "Please shorten this field to the allowed length.",
       "progress": "Sending your inquiry…",
       "success": "Your inquiry was accepted. Thank you for getting in touch.",
+      "referenceLabel": "Inquiry reference",
       "error": "We could not confirm your email was sent. Your message and attachment are still here. Please try again, or contact us by email or phone.",
       "sending": "Sending…"
     },
@@ -324,7 +325,7 @@ export const content = {
         }
       ],
       "processingHeading": "How the form is processed",
-      "brevoProcessing": "When enabled with Cloudflare and Brevo, the form sends your message and optional attachment through a Cloudflare Worker to Brevo, which sends an email to mail@rsalehin24.me. The Worker does not save submissions in a database. Brevo and our email provider may retain message data under their own policies. Cloudflare Turnstile processes technical information, such as IP addresses and browser information, to prevent spam. Message text and file contents are sent only when you submit the form.",
+      "brevoProcessing": "When enabled with Cloudflare and Brevo, the form sends your message and optional attachment through a Cloudflare Worker to Brevo, which sends an email to mail@rsalehin24.me. Cloudflare stores a daily count to generate your dated inquiry reference; it does not save your name, email, message or attachment in that counter. Brevo and our email provider may retain message data under their own policies. Cloudflare Turnstile processes technical information, such as IP addresses and browser information, to prevent spam. Message text and file contents are sent only when you submit the form.",
       "formspreeProcessing": "When enabled with Formspree, the form sends your message and optional file to Formspree. It forwards the message and a file download link to our email and stores submissions and files under its account settings. Its service may process technical information, such as IP addresses, for delivery and spam prevention. Message text and file contents are sent only when you submit the form.",
       "providerLabel": "Formspree privacy policy",
       "brevoLabel": "Brevo privacy policy",
@@ -613,6 +614,7 @@ export const content = {
       "tooLongError": "অনুমোদিত দৈর্ঘ্যের মধ্যে লিখুন।",
       "progress": "আপনার অনুসন্ধান পাঠানো হচ্ছে…",
       "success": "আপনার অনুসন্ধান গ্রহণ করা হয়েছে। যোগাযোগের জন্য ধন্যবাদ।",
+      "referenceLabel": "অনুসন্ধানের রেফারেন্স",
       "error": "আপনার ইমেইল পাঠানো হয়েছে কি না নিশ্চিত হওয়া যায়নি। বার্তা ও সংযুক্তি এখানেই আছে। আবার চেষ্টা করুন অথবা ইমেইল বা ফোনে যোগাযোগ করুন।",
       "sending": "পাঠানো হচ্ছে…"
     },
@@ -644,7 +646,7 @@ export const content = {
       ],
       "providerLabel": "Formspree-এর গোপনীয়তা নীতি",
       "processingHeading": "ফর্মের তথ্য প্রক্রিয়াকরণ",
-      "brevoProcessing": "Cloudflare ও Brevo দিয়ে চালু থাকলে ফর্মের বার্তা ও ঐচ্ছিক সংযুক্তি Cloudflare Worker-এর মাধ্যমে Brevo-এ যায়। Brevo তা mail@rsalehin24.me-এ ইমেইল হিসেবে পাঠায়। Worker কোনো ডেটাবেসে অনুসন্ধান সংরক্ষণ করে না। Brevo ও আমাদের ইমেইল সেবাদাতা নিজেদের নীতি অনুযায়ী বার্তার তথ্য রাখতে পারে। স্প্যাম প্রতিরোধে Cloudflare Turnstile আইপি ঠিকানা ও ব্রাউজারের তথ্যের মতো প্রযুক্তিগত তথ্য প্রক্রিয়া করে। বার্তা ও ফাইলের বিষয়বস্তু শুধু ফর্ম জমা দেওয়ার সময় পাঠানো হয়।",
+      "brevoProcessing": "Cloudflare ও Brevo দিয়ে চালু থাকলে ফর্মের বার্তা ও ঐচ্ছিক সংযুক্তি Cloudflare Worker-এর মাধ্যমে Brevo-এ যায়। Brevo তা mail@rsalehin24.me-এ ইমেইল হিসেবে পাঠায়। তারিখসহ অনুসন্ধানের রেফারেন্স তৈরির জন্য Cloudflare দৈনিক সংখ্যা সংরক্ষণ করে; এই হিসাবে আপনার নাম, ইমেইল, বার্তা বা সংযুক্তি রাখা হয় না। Brevo ও আমাদের ইমেইল সেবাদাতা নিজেদের নীতি অনুযায়ী বার্তার তথ্য রাখতে পারে। স্প্যাম প্রতিরোধে Cloudflare Turnstile আইপি ঠিকানা ও ব্রাউজারের তথ্যের মতো প্রযুক্তিগত তথ্য প্রক্রিয়া করে। বার্তা ও ফাইলের বিষয়বস্তু শুধু ফর্ম জমা দেওয়ার সময় পাঠানো হয়।",
       "formspreeProcessing": "Formspree দিয়ে চালু থাকলে ফর্মের বার্তা ও ঐচ্ছিক ফাইল Formspree-এ যায়। তারা বার্তা ও ফাইলের ডাউনলোড লিংক আমাদের ইমেইলে পাঠায় এবং অ্যাকাউন্টের সেটিংস অনুযায়ী তথ্য ও ফাইল সংরক্ষণ করে। পাঠানো ও স্প্যাম প্রতিরোধে তাদের সেবা আইপি ঠিকানার মতো প্রযুক্তিগত তথ্য প্রক্রিয়া করতে পারে। বার্তা ও ফাইলের বিষয়বস্তু শুধু ফর্ম জমা দেওয়ার সময় পাঠানো হয়।",
       "brevoLabel": "Brevo-এর গোপনীয়তা নীতি",
       "cloudflareLabel": "Cloudflare-এর গোপনীয়তা নীতি",

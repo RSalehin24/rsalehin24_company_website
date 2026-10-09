@@ -4,8 +4,14 @@ import { handleContact } from '../worker/contact.mjs';
 import { attachmentLimit, attachmentError } from '../src/lib/contact-rules.mjs';
 import { requestLimit } from '../worker/validation.mjs';
 import { createAttachmentArchive } from '../worker/attachment-archive.mjs';
+import { nextInquiryReference } from '../worker/inquiry-reference.mjs';
+import { inquiryStorage } from './helpers/inquiry-storage.mjs';
 
-const env = { BREVO_API_KEY: 'test-api-key', TURNSTILE_SECRET_KEY: 'test-secret-key', BREVO_SENDER_EMAIL: 'mail@rsalehin24.me' };
+const reference = 'RS24-10Aug2026-0003';
+const env = {
+ BREVO_API_KEY: 'test-api-key', TURNSTILE_SECRET_KEY: 'test-secret-key', BREVO_SENDER_EMAIL: 'mail@rsalehin24.me',
+ INQUIRY_COUNTER: {getByName(name) { assert.equal(name,'daily-inquiries'); return {nextReference:async()=>reference}; }},
+};
 const origin = 'https://www.rsalehin24.me';
 const binary = Uint8Array.from({length:65539},(_,index)=>index%256);
 
@@ -38,7 +44,7 @@ test('delivers subject, body, reply address and binary attachment to the fixed r
  const mock = deliveryMock();
  const response = await handleContact(requestFor(form),env,mock.fetchRequest);
  assert.equal(response.status,200);
- assert.deepEqual(await response.json(),{ok:true});
+ assert.deepEqual(await response.json(),{ok:true,reference});
  assert.equal(response.headers.get('Access-Control-Allow-Origin'),origin);
  assert.equal(response.headers.get('Cache-Control'),'no-store');
  assert.equal(mock.calls.length,2);
@@ -50,7 +56,9 @@ test('delivers subject, body, reply address and binary attachment to the fixed r
  assert.deepEqual(payload.to,[{email:'mail@rsalehin24.me',name:'RSalehin24'}]);
  assert.equal(payload.sender.email,env.BREVO_SENDER_EMAIL);
  assert.deepEqual(payload.replyTo,{email:'client@example.com',name:'A Client'});
- assert.equal(payload.subject,'A new website');
+ assert.equal(payload.subject,'['+reference+'] : A new website');
+ assert.equal(payload.textContent,'Client Name: A Client\nCompany: A company\nEmail: client@example.com\nPhone: +8801234567890\nService: websites\nInquiry reference: '+reference+'\n\n---\n\nA project brief.\r\nবাংলা বার্তা <script>bad()</script>');
+ assert.ok(payload.htmlContent.includes(reference));
  assert.ok(payload.textContent.includes('বাংলা বার্তা <script>bad()</script>'));
  assert.ok(payload.htmlContent.includes('&lt;script&gt;bad()&lt;/script&gt;'));
  assert.ok(!payload.htmlContent.includes('<script>'));
@@ -196,4 +204,41 @@ test('caps the request body even when no content length is supplied', async () =
  assert.equal(response.status,413);
  const malformed = requestFor('invalid',{headers:{Origin:origin,'Content-Type':'multipart/form-data; boundary=missing'}});
  assert.equal((await handleContact(malformed,env,deliveryMock().fetchRequest)).status,400);
+});
+
+test('only allocates references after validation and spam verification, ignoring client-supplied references', async () => {
+ const storage = inquiryStorage();
+ const counter = {getByName:()=>({nextReference:()=>nextInquiryReference(storage,new Date('2026-08-10T04:00:00Z'))})};
+ const configured = {...env,INQUIRY_COUNTER:counter};
+ await handleContact(requestFor(inquiryForm({email:'invalid'})),configured,deliveryMock().fetchRequest);
+ await handleContact(requestFor(inquiryForm()),configured,deliveryMock({challenge:{success:false}}).fetchRequest);
+ assert.equal(storage.values.size,0);
+ const mock = deliveryMock();
+ const result = await handleContact(requestFor(inquiryForm({reference:'forged-reference'})),configured,mock.fetchRequest);
+ assert.deepEqual(await result.json(),{ok:true,reference:'RS24-10Aug2026-0001'});
+ assert.equal(JSON.parse(mock.calls[1].request.body).subject,'[RS24-10Aug2026-0001] : A new website');
+});
+
+test('does not reuse a reserved reference after a provider rejection', async () => {
+ const storage = inquiryStorage();
+ const configured = {...env,INQUIRY_COUNTER:{getByName:()=>({nextReference:()=>nextInquiryReference(storage,new Date('2026-08-10T04:00:00Z'))})}};
+ const rejected = await handleContact(requestFor(inquiryForm()),configured,deliveryMock({status:400}).fetchRequest);
+ assert.equal(rejected.status,502);
+ assert.equal('reference' in await rejected.json(),false);
+ const accepted = await handleContact(requestFor(inquiryForm()),configured,deliveryMock().fetchRequest);
+ assert.deepEqual(await accepted.json(),{ok:true,reference:'RS24-10Aug2026-0002'});
+});
+
+test('fails safely if persistent reference storage is missing or unavailable', async context => {
+ const mock = deliveryMock();
+ const missing = await handleContact(requestFor(inquiryForm()),{...env,INQUIRY_COUNTER:undefined},mock.fetchRequest);
+ assert.equal(missing.status,503);
+ assert.equal(mock.calls.length,0);
+ const log = context.mock.method(console,'error',()=>{});
+ const unavailable = {...env,INQUIRY_COUNTER:{getByName:()=>({nextReference:async()=>{throw new Error('Storage unavailable');}})}};
+ const response = await handleContact(requestFor(inquiryForm()),unavailable,mock.fetchRequest);
+ assert.equal(response.status,502);
+ assert.deepEqual(await response.json(),{ok:false,code:'delivery',errors:[]});
+ assert.equal(mock.calls.length,1);
+ assert.equal(log.mock.calls.length,1);
 });

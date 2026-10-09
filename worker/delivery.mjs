@@ -30,7 +30,7 @@ export async function verifyChallenge(context, fetchRequest) {
 }
 
 function emailText(inquiry) {
-  return `${inquiry.message}\n\n—\nWebsite inquiry from ${inquiry.name}\nReply email: ${inquiry.email}\nService: ${inquiry.service}\nCompany: ${inquiry.company || 'Not supplied'}\nPhone: ${inquiry.phone || 'Not supplied'}`;
+  return `Client Name: ${inquiry.name}\nCompany: ${inquiry.company || 'Not supplied'}\nEmail: ${inquiry.email}\nPhone: ${inquiry.phone || 'Not supplied'}\nService: ${inquiry.service}\nInquiry reference: ${inquiry.reference}\n\n---\n\n${inquiry.message}`;
 }
 
 function escapeHTML(value) {
@@ -43,7 +43,7 @@ async function emailPayload(inquiry, sender) {
     sender,
     to: [{ email: recipient, name: 'RSalehin24' }],
     replyTo: { email: inquiry.email, name: inquiry.name },
-    subject: inquiry.subject, textContent: text,
+    subject: `[${inquiry.reference}] : ${inquiry.subject}`, textContent: text,
     htmlContent: `<html><body><pre style="white-space:pre-wrap;font-family:sans-serif">${escapeHTML(text)}</pre></body></html>`,
   };
   if (inquiry.attachment) payload.attachment = [await encodeAttachment(inquiry.attachment)];

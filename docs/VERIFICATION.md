@@ -6,7 +6,7 @@ Verified on 2026-10-09 against the Astro production output. The GitHub Actions w
 
 - Astro production build: 12 localized content routes, English/Bangla 404 pages and sitemap generated.
 - Astro check: zero errors, warnings or hints.
-- Node tests: 19 passed, covering provider configuration, registered sender selection and invalid IDs, separate sender/recipient addresses, fixed-recipient email delivery, expanded attachment formats, exact binary attachment encoding, independent ZIP-format fixtures, validation, upload/request limits, spam verification, origin/method checks and provider failures/timeouts.
+- Node tests: 27 passed, covering provider configuration, registered sender selection and invalid IDs, separate sender/recipient addresses, fixed-recipient email delivery, expanded attachment formats, exact binary attachment encoding, independent ZIP-format fixtures, validation, upload/request limits, spam verification, origin/method checks, provider failures/timeouts and inquiry references.
 - Static verification passed for default, Formspree and Cloudflare/Brevo output: unique localized titles and descriptions, self-canonicals, reciprocal en/bn and x-default links, Open Graph metadata, business/service structured data, sitemap, robots, CNAME, links, responsive images and 404 noindex.
 - Public HTML contains no repository links, localhost references or developer setup instructions. Company contact details match the supplied reference.
 
@@ -36,7 +36,8 @@ Tested both languages using separate production fixtures for Cloudflare/Brevo an
 - Network failure, provider validation errors, rate limits, malformed JSON and unconfirmed responses: subject/message and selected file retained, retry enabled.
 - A simulated 40-second timeout preserves the draft and file, reports an error and re-enables submission.
 - Progress state and duplicate-submit prevention while a request is pending.
-- Confirmed success: localized feedback and reset form.
+- Confirmed success: localized feedback and reset form; Cloudflare/Brevo feedback includes the server-generated inquiry reference in both languages, while Formspree feedback remains unchanged.
+- Inquiry references follow `RS24-10Aug2026-0003` and email subjects follow `[reference] : Entered subject`. Tests cover sequential and concurrent allocation, Dhaka midnight/year rollover, retained counts after storage reload, numbers beyond `9999`, invalid/exhausted storage, server control of references, missing/unavailable storage and provider errors. Invalid/spam requests reserve no number; a reserved number is never reused after a failed delivery.
 - Honeypot: filled spam field blocks outgoing requests.
 - Configured HTML form retains native validation and a Formspree action without JavaScript.
 - Cloudflare delivery verifies tokens before sending and refreshes them after attempts. Expired tokens, missing/failed verification and a blocked verification script are covered. Its no-JavaScript state disables sending and displays direct alternatives.
@@ -48,6 +49,8 @@ Tested both languages using separate production fixtures for Cloudflare/Brevo an
 The Cloudflare Worker, Managed Turnstile widget, private Brevo/Turnstile secret bindings and public GitHub variables are configured. Both localized forms are enabled on GitHub Pages. Missing public configuration continues to show direct options. See [CONTACT.md](CONTACT.md).
 
 ## Live email deployment
+
+The deployed SQLite-backed inquiry counter allocated consecutive references `RS24-09Oct2026-0001` and `RS24-09Oct2026-0002` for two concurrent English/Bangla delivery checks on 2026-10-09. Both used the production counter namespace and delivery module with bilingual TXT attachments. Brevo reported both delivered at 16:35 UTC, with subjects formatted `[reference] : Entered subject`. An authenticated temporary Worker performed these server checks and was removed afterward; they do not replace a human-completed website submission through Turnstile. A second production deployment preserved the same counter namespace. Live www/apex preflights and missing-token rejection also passed after the change. The local email regression test verifies client details first, then `---` and the full message, with visitor Reply-To preserved.
 
 - A real English website submission titled `Website registered sender test` was delivered at 2026-10-09 16:10 UTC after sender selection was changed to verified Brevo sender ID `4`. Brevo reported delivery, Cloudflare recorded SPF/DKIM/DMARC pass, and the owner confirmed inbox receipt. Earlier website messages had bounced with neutral DKIM and failed DMARC even while direct tests passed. The domain's reject policy remains enabled.
 - At the owner's request, `website@rsalehin24.me` was then created as active registered sender ID `10`, named `RSalehin24 website`. Cloudflare Email Routing forwards incoming mail to that address to the existing verified inbox. The Worker selects this dedicated sender; inquiries still go to `mail@rsalehin24.me`, with the visitor's address as Reply-To. Regression tests cover both sender-ID and email/name selection with distinct sender and recipient addresses.

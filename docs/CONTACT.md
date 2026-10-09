@@ -23,6 +23,7 @@ Configured on 2026-10-09:
 - Managed Turnstile widget: `RSalehin24 contact`, allowing `www.rsalehin24.me` and `rsalehin24.me`, with pre-clearance off.
 - Brevo: transactional email enabled; `website@rsalehin24.me` is active registered sender ID `10`, displayed as `RSalehin24 website`. The Worker references that ID directly and delivers inquiries to `mail@rsalehin24.me`. The Brevo API key and Turnstile secret are private Worker secret bindings.
 - Cloudflare Email Routing: incoming mail to `website@rsalehin24.me` forwards to the same verified inbox as `mail@rsalehin24.me`. Brevo handles sending; the existing inbox handles incoming messages.
+- Inquiry numbering: the `INQUIRY_COUNTER` Durable Object binding stores daily sequence numbers, with dates interpreted in `Asia/Dhaka`. New inquiries use `[RS24-DDMonYYYY-NNNN] : Entered subject`.
 - GitHub: both public contact variables are configured. The website is deployed by GitHub Pages.
 
 After switching to a registered sender ID, a real English website submission titled `Website registered sender test` was delivered at 2026-10-09 16:10 UTC. Brevo reported delivery, Cloudflare recorded SPF/DKIM/DMARC pass, and the owner confirmed inbox receipt. The owner then requested a separate sending address, so `website@rsalehin24.me` was created and verified for the website.
@@ -63,7 +64,9 @@ To automate future Worker deployments, connect the existing Worker to this GitHu
 | Build command | `npm test` |
 | Deploy command | `npx wrangler deploy --config worker/wrangler.jsonc` |
 
-The entry point is `worker/contact.mjs`. No additional repository dependency is required. Keep the Worker name consistent with `worker/wrangler.jsonc`. Disable deployments from non-production branches unless you intend to configure previews separately.
+The entry point is `worker/index.mjs`, exporting the contact handler and `InquiryCounter` Durable Object. No additional repository dependency is required. Keep the Worker name consistent with `worker/wrangler.jsonc`. Disable deployments from non-production branches unless you intend to configure previews separately.
+
+The configuration creates the SQLite-backed `InquiryCounter` class with migration `inquiry-counter-v1` and binds it as `INQUIRY_COUNTER`. Keep this namespace, migration history and the `daily-inquiries` object name unchanged during redeployments so existing daily counts persist. Deploy with the complete configuration; uploading only the contact handler or omitting its Durable Object binding will disable submissions.
 
 Open the Worker → Settings → Variables and Secrets. Add these as **Secret** values:
 
@@ -91,7 +94,8 @@ For local development, put the same public values in ignored `.env`, then rebuil
 
 From the deployed English contact page, submit a message with a small attachment and a reply email you control. Confirm all of the following in `mail@rsalehin24.me`:
 
-- The message arrived, with the entered subject and full body.
+- The message arrived, with a subject such as `[RS24-10Aug2026-0003] : Business website for ABC` and the full body.
+- The reference in the subject and message matches the reference shown in the form confirmation.
 - The attachment opens and contains the original file contents.
 - Reply uses the visitor's email.
 - Company, phone and service details are included.
@@ -100,7 +104,15 @@ Repeat from the Bangla page, including Bengali subject/body text. The success me
 
 If an accepted message bounces with `DMARC checks failed`, compare Brevo's transactional event with Cloudflare Email Routing's authentication results. Check both DKIM records against the domain configuration in Brevo, and refresh [domain authentication](https://developers.brevo.com/docs/domain-authentication-and-verification) when appropriate. Confirm DKIM/DMARC pass on a subsequent test. A domain showing authenticated in the dashboard alone does not prove that an individual email passed authentication.
 
-The frontend preserves text and the selected file on errors, prevents duplicate clicks, and resets only after confirmed acceptance. It has a 40-second timeout. The Worker limits total request size, validates fields/files, checks a honeypot, verifies Turnstile, and does not store submissions in a database or log their contents. It does not retry an uncertain send automatically. With JavaScript disabled or a blocked verification service, visitors can use the visible direct email and phone links.
+The frontend preserves text and the selected file on errors, prevents duplicate clicks, and resets only after confirmed acceptance. It has a 40-second timeout. The Worker limits total request size, validates fields/files, checks a honeypot, verifies Turnstile, and does not store submissions in a database or log their contents. It stores only dated daily counters in a Durable Object. It does not retry an uncertain send automatically. With JavaScript disabled or a blocked verification service, visitors can use the visible direct email and phone links.
+
+## Inquiry references and inbox organization
+
+New Cloudflare/Brevo inquiries receive a reference such as `RS24-10Aug2026-0003`: the `RS24` prefix, the date in Dhaka, and the third verified submission reserved that day. English month abbreviations and Latin digits keep the identifier identical in both languages. The sequence starts at `0001` on each new Dhaka date, grows beyond four digits when necessary, and survives deployments. One persistent object allocates numbers atomically, including simultaneous submissions across both languages and website origins. Existing emails are not renumbered.
+
+References are generated by the server after input validation and Turnstile verification, then included in the subject as `[reference] : Entered subject`, in both email bodies, and in successful form responses. Both email bodies show Client Name, Company, Email, Phone, Service and Inquiry reference first, followed by `---` and the client's message. Invalid and spam submissions do not consume numbers. A provider rejection or uncertain delivery can leave a reserved number unused; it is never reassigned. The reference identifies the verified request order, rather than a guaranteed delivered-email count. No client names, email addresses, messages or attachments are saved in the counter storage. Formspree retains its existing behavior without these references.
+
+To separate website inquiries and subsequent replies in Gmail, [create a filter](https://support.google.com/mail/answer/6579) with **Subject** `RS24-`, then apply a **Website inquiries** label. Search for a complete reference to find a particular request, or `subject:RS24-10Aug2026` to find that day's inquiries. Keep the reference when an inquiry becomes a project. The visitor remains the Reply-To recipient; no automatic client copy or acknowledgement is enabled.
 
 ## Formspree alternative
 

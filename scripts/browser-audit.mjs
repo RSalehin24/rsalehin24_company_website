@@ -205,7 +205,8 @@ try{
    if(mode==='malformed')return routed.fulfill({status:200,headers,body:'invalid'});
    if(mode==='unconfirmed')return routed.fulfill({status:200,headers,body:'{"ok":false}'});
    if(mode==='challenge')return routed.fulfill({status:422,headers,body:'{"ok":false,"code":"challenge"}'});
-   return routed.fulfill({status:200,headers,body:'{"ok":true}'});
+   const result=provider==='brevo'?{ok:true,reference:'RS24-10Aug2026-0003'}:{ok:true};
+   return routed.fulfill({status:200,headers,body:JSON.stringify(result)});
   });
   await submit.click();await expect(page.locator('#name')).toBeFocused();await expect(page.locator('#name')).toHaveAttribute('aria-invalid','true');assert.equal(calls,0);
   await page.locator('#name').fill('  ');await page.locator('#email').fill('invalid');await page.locator('#message').fill('A useful project brief.');
@@ -233,6 +234,10 @@ try{
   mode='slow';const before=calls;await submit.click();await expect(submit).toBeDisabled();await expect(form).toHaveAttribute('aria-busy','true');await expect(status).toHaveAttribute('data-state','pending');
   await form.evaluate(f=>{f.requestSubmit();f.requestSubmit();});assert.equal(calls,before+1);release();
   await expect(status).toHaveAttribute('data-state','success');await expect(page.locator('#message')).toHaveValue('');await expect(page.locator('#subject')).toHaveValue('');assert.equal(await attachment.evaluate(input=>input.files.length),0);await expect(submit).toBeEnabled();
+  if(provider==='brevo') {
+   await expect(status).toContainText('RS24-10Aug2026-0003');
+   await expect(status).toContainText(language==='en'?'Inquiry reference':'অনুসন্ধানের রেফারেন্স');
+  } else await expect(status).toHaveText(await form.getAttribute('data-success'));
   await page.locator('#name').fill('Test Inquiry');await page.locator('#email').fill('test@example.com');await page.locator('#subject').fill('Second subject');await page.locator('#message').fill('Second inquiry');await page.locator('#service').selectOption('websites');
   await page.locator('[name="_gotcha"]').evaluate(e=>e.value='spam');const spamCalls=calls;await submit.click();await expect(status).toHaveAttribute('data-state','error');assert.equal(calls,spamCalls);
   await page.locator('[name="_gotcha"]').evaluate(e=>e.value='');

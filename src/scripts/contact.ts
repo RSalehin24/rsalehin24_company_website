@@ -38,7 +38,8 @@ async function readSubmissionResponse(response: Response) {
   const accepted = response.ok && 'ok' in result && result.ok === true;
   const errors: unknown[] = 'errors' in result && Array.isArray(result.errors) ? result.errors : [];
   const code = 'code' in result ? result.code : '';
-  return { accepted, errors, status: response.status, code };
+  const reference = 'reference' in result && typeof result.reference === 'string' ? result.reference : '';
+  return { accepted, errors, status: response.status, code, reference };
 }
 
 class ContactFormController {
@@ -117,7 +118,8 @@ class ContactFormController {
       return;
     }
     this.form.reset();
-    this.showFeedback(this.form.dataset.success || '', 'success');
+    const reference = result.reference ? ` ${this.form.dataset.referenceLabel}: ${result.reference}` : '';
+    this.showFeedback(`${this.form.dataset.success || ''}${reference}`, 'success');
     this.feedback.focus();
   }
 
